@@ -1,85 +1,37 @@
 <?php
 
-use Behat\Behat\Context\ClosuredContextInterface,
-    Behat\Behat\Context\TranslatedContextInterface,
-    Behat\Behat\Context\BehatContext,
-    Behat\Behat\Exception\PendingException;
-use Behat\Gherkin\Node\PyStringNode,
-    Behat\Gherkin\Node\TableNode;
 use Behat\MinkExtension\Context\MinkContext;
 
-//
-// Require 3rd-party libraries here:
-//
-//   require_once 'PHPUnit/Autoload.php';
-//   require_once 'PHPUnit/Framework/Assert/Functions.php';
-//
-
-/**
- * Features context.
- */
 class FeatureContext extends MinkContext
 {
     /**
-     * Initializes context.
-     * Every scenario gets it's own context object.
-     *
-     * @param array $parameters context parameters (set them up through behat.yml)
+     * @When /^I select all provider$/
      */
-    public function __construct(array $parameters)
-    {
-    }
-
-    /**
-     * @When /^I select all brand$/
-     */
-    public function iSelectAllBrand()
+    public function iSelectAllProvider()
     {
         $session = $this->getSession();
         $page = $session->getPage();
+
+        $handler = $session->getSelectorsHandler();
 
         $totalproduct = $page->findById("filterProgressBar")->getText();
-        echo "\n\nToplam ".$totalproduct." var\n\n";
+        echo "\n\nToplam " . $totalproduct . "\n";
 
-        $brandselect = $page->find("xpath" , "/html/body/div[2]/div/div/div[2]/div[2]/div/div/div/div[2]/div[3]/div/select");
+        $providerselect = $page->find('css', 'html.js body.layout1 div#contentHolder div#mainContent div.catalogListing div.catalogContainer div#catalogResult
+        div.productListingContainer div.productListing div#topFilterContainer div.filterInner div.filterItemsContainer div#filterProvider select');
 
-        var_dump($brandselect);
+        $provideropt = $providerselect->findAll('named', array('option', $handler->selectorToXpath('css', 'select')));
+        $totalprovider = count($provideropt) - 1;
+        echo "\n\nToplam " . $totalprovider . " provider var\n\n";
+
+        for ($i = 1; $i < $totalprovider; $i++) {
+            $data_url = $provideropt[$i]->getAttribute('data-url');
+            $providerurl = "/arama/" . $data_url . "-magazasi";
+            $session->visit("http://vitringez.com" . $providerurl);
+            $subproduct = $page->findById("filterProgressBar")->getText();
+            echo $data_url . "   -> " . $subproduct . " var\n";
+            $session->visit("http://vitringez.com/arama");
+
+        }
     }
-
-    /**
-     * @Then /^I click on element with id "([^"]*)"$/
-     */
-    public function iClickOnElementWithId($id)
-    {
-        $this->getSession()->getPage()->clickLink("id");
-    }
-
-    /**
-     * @When /^I click on the element with css "([^"]*)"$/
-     */
-    public function iClickOnTheElementWithCss($css)
-    {
-        $session = $this->getSession();
-        $page = $session->getPage();
-        $page->find('css',$css)->click();
-    }
-    
-    public function iClickOnTheElementWithXpath($xpath)
-    {
-        $session = $this->getSession();
-        $page = $session->getPage();
-        $page->find('xpath',$xpath)->click();
-    }
-
-//
-// Place your definition and hook methods here:
-//
-//    /**
-//     * @Given /^I have done something with "([^"]*)"$/
-//     */
-//    public function iHaveDoneSomethingWith($argument)
-//    {
-//        doSomethingWith($argument);
-//    }
-//
 }

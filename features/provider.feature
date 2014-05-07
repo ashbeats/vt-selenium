@@ -4,8 +4,8 @@ Feature: Providerları test etmek için kullanılacak.
   Background:
     Given I am on homepage
 
-    @javascript
+  @javascript
   Scenario: Arama sayfasına geç
-    Then I go to "/arama"
-    When I select all brand
+    When I go to "/arama"
+    Then I select all provider
 
