@@ -1,11 +1,11 @@
-Feature: Providerları test etmek için kullanılacak.
-  vitringez.com/arama üzerindeki provider ve ürün sayısı.
+Feature: provider
+  this feature will be used to testing providers on vitringez.com
 
   Background:
     Given I am on homepage
 
   @javascript
-  Scenario: Arama sayfasına geç
+  Scenario: Jump on the search page
     When I go to "/arama"
     Then I select all provider
 
