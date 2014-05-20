@@ -4,6 +4,43 @@ use Behat\MinkExtension\Context\MinkContext;
 
 class FeatureContext extends MinkContext
 {
+    /**
+     * @Then /^I fill in registration form$/
+     */
+    public function iFillInRegistrationForm()
+    {
+        $session = $this->getSession();
+        $page = $session->getPage();
+        $handler = $session->getSelectorsHandler();
+
+        $registration_form = $page->findById("newUserLink");
+        $registration_form->click();
+
+        $namefield = $page->find("xpath",
+            $handler->selectorToXpath('xpath', "/html/body/div[4]/div/div/div/form/div/input"));
+
+        $surnamefield = $page->find("xpath",
+            $handler->selectorToXpath("xpath", "/html/body/div[4]/div/div/div/form/div[2]/input"));
+
+        $namefield->setValue($this->generateRandomString(rand(3, 12)));
+        $surnamefield->setValue($this->generateRandomString(rand(3, 12)));
+        /*$usernamefield;
+        $emailfield;
+        $passwordfield;
+        $passwordagain;*/
+
+    }
+
+    public function generateRandomString($length = 6)
+    {
+        $characters = 'abcdefghijklmnopqrstuvwxyz';
+        $randomString = '';
+        for ($i = 0; $i < $length; $i++) {
+            $randomString .= $characters[rand(0, strlen($characters) - 1)];
+        }
+        return $randomString;
+    }
+
 
     /**
      * @When /^I select all provider$/
@@ -27,34 +64,27 @@ class FeatureContext extends MinkContext
 
         $provider_name = array();
         $provider_product = array();
-        for($i = 1; $i < $totalprovider;$i++)
-        {
-            $pr = $providerdiv[$i]->find('css','input');
+        for ($i = 1; $i < $totalprovider; $i++) {
+            $pr = $providerdiv[$i]->find('css', 'input');
             $data_url = $pr->getAttribute("data-url");
             $providerurl = "/arama/" . $data_url . "-magazasi";
-            $session->visit("http://vitringez.com".$providerurl);
+            $session->visit("http://vitringez.com" . $providerurl);
 
             $provider_name[] = $pr->getAttribute("data-name");
             $subproduct = $page->findById("filterProgressBar")->getText();
             $provider_product[] = $subproduct;
-//            echo $data_url . "   -> " . $subproduct . " var\n";
+            echo $data_url . "   -> " . $subproduct . " var\n";
             $session->visit("http://vitringez.com/arama");
 
         }
-/*        echo "ikinci for a geçiş";
-        foreach($provider_product as $t)
-        {
-            echo $t."\n";
-        }*/
-
 
     }
 
     /**
-     * @Given /^I wait "([^"]*)" milisecond$/
+     * @Given /^I wait "([^"]*)" millisecond$/
      */
-    public function iWaitMilisecond($time)
+    public function iWaitMillisecond($time)
     {
-        $this->getSession()->wait($time);
+        $this->getSession()->wait(intval($time));
     }
 }

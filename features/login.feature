@@ -12,7 +12,8 @@ Feature: login feature
 	Then I follow "loginRegisterButton"
     Then I fill in "username" with "testhesabi"
     Then I fill in "password" with "test1234"
-    Then I press "_submit"
+    When I press "_submit"
+   # Then I should see "Çıkış" in the "html.js body.layout1 div#contentHolder header#header div#headerContainer aside#headerRight a.borderOnRight" element
 
 
 
