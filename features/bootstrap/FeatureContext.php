@@ -25,20 +25,36 @@ class FeatureContext extends MinkContext
         $totalprovider = count($providerdiv);
         echo "Provider sayısı:" . $totalprovider . "\n\n";
 
+        $provider_name = array();
+        $provider_product = array();
         for($i = 1; $i < $totalprovider;$i++)
         {
             $pr = $providerdiv[$i]->find('css','input');
             $data_url = $pr->getAttribute("data-url");
             $providerurl = "/arama/" . $data_url . "-magazasi";
             $session->visit("http://vitringez.com".$providerurl);
+
+            $provider_name[] = $pr->getAttribute("data-name");
             $subproduct = $page->findById("filterProgressBar")->getText();
-            echo $data_url . "   -> " . $subproduct . " var\n";
+            $provider_product[] = $subproduct;
+//            echo $data_url . "   -> " . $subproduct . " var\n";
             $session->visit("http://vitringez.com/arama");
 
         }
+/*        echo "ikinci for a geçiş";
+        foreach($provider_product as $t)
+        {
+            echo $t."\n";
+        }*/
 
 
     }
 
-
+    /**
+     * @Given /^I wait "([^"]*)" milisecond$/
+     */
+    public function iWaitMilisecond($time)
+    {
+        $this->getSession()->wait($time);
+    }
 }

@@ -1,20 +1,20 @@
-Feature: log in-out
-  this feature will be used to testing log in/out vitringez.com
+Feature: login feature
+  In order to sign in to vitringez.com
+  As a vitringez.com member
+  I need to be able to log in to vitringez.com successfully
 
   Background:
     Given I am on homepage
 
   @javascript
   Scenario: user login
-    Given I am on "http://vitringez.com"
+    When I should not see "Hesabım"
 	Then I follow "loginRegisterButton"
     Then I fill in "username" with "testhesabi"
     Then I fill in "password" with "test1234"
     Then I press "_submit"
 
-  Scenario: log out
 
-    Then I go to "/kullanici/cikis"
 
 
 
