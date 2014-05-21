@@ -11,5 +11,5 @@ Feature: register feature
     Then I fill in registration form
 
 
-    #Then I follow "newUserLink"
+
 

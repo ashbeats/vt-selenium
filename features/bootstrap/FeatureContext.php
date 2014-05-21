@@ -10,42 +10,37 @@ class FeatureContext extends MinkContext
     public function iFillInRegistrationForm()
     {
         $session = $this->getSession();
+        $session->getDriver()->resizeWindow(1600,900,'current');
         $page = $session->getPage();
         $handler = $session->getSelectorsHandler();
 
-        $registration_form = $page->findById("newUserLink");
-        $registration_form->click();
+        $page->findById("newUserLink")->click();
 
         $divrow = array();
         $divrow = $page->findAll("css", "html.js body.layout1 div#simplemodal-container.simplemodal-container div.simplemodal-wrap
         div#simplemodal-data.modalContent div.registrationFormContainer form.fos_user_registration_register div.row");
 
-        $namediv = $divrow[0];
-        $namefield = $namediv->find("css", "input");
+
+        $namefield = $divrow[0]->find("css", "input");
         $namefield->setValue($this->generateRandomString(rand(3, 12)));
-        $surnamediv = $divrow[1];
-        $surnamefield = $surnamediv->find("css", "input");
+
+        $surnamefield = $divrow[1]->find("css", "input");
         $surnamefield->setValue($this->generateRandomString(rand(3, 12)));
-        $usernamediv = $divrow[2];
-        $usernamefield = $usernamediv->find("css", "input");
+
+        $usernamefield = $divrow[2]->find("css", "input");
         $usernamefield->setValue($this->generateRandomString(rand(5, 12)));
 
-        $emaildiv = $divrow[3];
-        $emailfield = $emaildiv->find("css", "input");
+        $emailfield = $divrow[3]->find("css", "input");
         $emailfield->setValue($this->generateRandomEmail());
 
-        $passworddiv = $divrow[4];
-        $passwordfield = $passworddiv->find("css", "input");
+        $passwordfield = $divrow[4]->find("css", "input");
         $password = $this->generateRandomPassword(rand(6, 14));
         $passwordfield->setValue($password);
 
-        $passworddiv2 = $divrow[5];
-        $passwordfield2 = $passworddiv2->find("css", "input");
+        $passwordfield2 = $divrow[5]->find("css", "input");
         $passwordfield2->setValue($password);
 
-        $useragreement = $divrow[6];
-        $useragreementcheck = $useragreement->find("css", "input");
-        $useragreementcheck->check();
+        $divrow[6]->find("css", "input")->check();
 
         $divrow[7]->find("css", "input")->click(); // submit form
 
