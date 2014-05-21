@@ -5,12 +5,29 @@ use Behat\MinkExtension\Context\MinkContext;
 class FeatureContext extends MinkContext
 {
     /**
-     * @Then /^I fill in registration form$/
+     * @When /^I set the fashion alert$/
+     */
+    public function iSetTheFashionAlert()
+    {
+        $session = $this->getSession();
+        $page = $session->getPage();
+
+        $productItem = $page->find("css","html.js body.layout1 div#contentHolder div#mainContent div.catalogListing div.catalogContainer
+        div#catalogResult div.productListingContainer div.productListing div.productItem");
+
+        $productItem->mouseOver();
+
+
+
+    }
+
+    /**
+     * @When /^I fill in registration form$/
      */
     public function iFillInRegistrationForm()
     {
         $session = $this->getSession();
-        $session->getDriver()->resizeWindow(1600,900,'current');
+//        $session->getDriver()->resizeWindow(1600,900,'current');
         $page = $session->getPage();
         $handler = $session->getSelectorsHandler();
 
@@ -45,50 +62,6 @@ class FeatureContext extends MinkContext
         $divrow[7]->find("css", "input")->click(); // submit form
 
     }
-
-    public function generateRandomEmail()
-    {
-        $characters = 'abcdefghijklmnopqrstuvwxyz';
-
-        $email = "bdd_".$this->generateRandomString()."@yahoo.com";
-
-/*        $dom = $n = '';
-
-        do {
-            $n = $dom = '';
-            for ($i = 0; $i < rand(5, 15); $i++) {
-                $n .= $characters[rand(0, strlen($characters) - 1)];
-            }
-            for ($i = 0; $i < rand(6, 12); $i++) {
-                $dom .= $characters[rand(0, strlen($characters) - 1)];
-            }
-            $email = $n . "@" . $dom . ".com";
-        } while (filter_var($email, FILTER_VALIDATE_EMAIL));*/
-        return $email;
-
-    }
-
-    public function generateRandomString($length = 6)
-    {
-        $characters = 'abcdefghijklmnopqrstuvwxyz';
-        $randomString = '';
-        for ($i = 0; $i < $length; $i++) {
-            $randomString .= $characters[rand(0, strlen($characters) - 1)];
-        }
-        return $randomString;
-    }
-
-    public function generateRandomPassword($length = 10)
-    {
-        $characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPRSTUVYWZ*,./\\#-_0123456789';
-        $randomPassword = '';
-        for ($i = 0; $i < $length; $i++) {
-            $randomPassword .= $characters[rand(0, strlen($characters) - 1)];
-        }
-        return $randomPassword;
-
-    }
-
 
     /**
      * @When /^I select all provider$/
@@ -135,4 +108,48 @@ class FeatureContext extends MinkContext
     {
         $this->getSession()->wait(intval($time));
     }
+
+    public function generateRandomEmail()
+    {
+        $characters = 'abcdefghijklmnopqrstuvwxyz';
+
+        $email = "bdd_".$this->generateRandomString()."@yahoo.com";
+
+        /*        $dom = $n = '';
+
+                do {
+                    $n = $dom = '';
+                    for ($i = 0; $i < rand(5, 15); $i++) {
+                        $n .= $characters[rand(0, strlen($characters) - 1)];
+                    }
+                    for ($i = 0; $i < rand(6, 12); $i++) {
+                        $dom .= $characters[rand(0, strlen($characters) - 1)];
+                    }
+                    $email = $n . "@" . $dom . ".com";
+                } while (filter_var($email, FILTER_VALIDATE_EMAIL));*/
+        return $email;
+
+    }
+
+    public function generateRandomString($length = 6)
+    {
+        $characters = 'abcdefghijklmnopqrstuvwxyz';
+        $randomString = '';
+        for ($i = 0; $i < $length; $i++) {
+            $randomString .= $characters[rand(0, strlen($characters) - 1)];
+        }
+        return $randomString;
+    }
+
+    public function generateRandomPassword($length = 10)
+    {
+        $characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPRSTUVYWZ*,./\\#-_0123456789';
+        $randomPassword = '';
+        for ($i = 0; $i < $length; $i++) {
+            $randomPassword .= $characters[rand(0, strlen($characters) - 1)];
+        }
+        return $randomPassword;
+
+    }
 }
+

@@ -8,8 +8,12 @@ Feature: register feature
     Given I am on homepage
     Then I should not see "Hesabım"
     And I follow "loginRegisterButton"
-    Then I fill in registration form
-
+    When I fill in registration form
+#    Then I should see "Hesabım"
+    Then I go to "/kullanici/cikis"
+    Then I should not see "Hesabım"
+    And I follow "loginRegisterButton"
+    When I fill in registration form
 
 
 
