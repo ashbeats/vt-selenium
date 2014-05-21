@@ -10,10 +10,12 @@ Feature: register feature
     And I follow "loginRegisterButton"
     When I fill in registration form
 #    Then I should see "Hesabım"
-    Then I go to "/kullanici/cikis"
-    Then I should not see "Hesabım"
-    And I follow "loginRegisterButton"
-    When I fill in registration form
+    Then I wait "4000" millisecond
+    Then I go to "/arama"
+
+
+
+
 
 
 
