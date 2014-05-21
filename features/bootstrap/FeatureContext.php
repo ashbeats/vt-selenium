@@ -16,18 +16,60 @@ class FeatureContext extends MinkContext
         $registration_form = $page->findById("newUserLink");
         $registration_form->click();
 
-        $namefield = $page->find("xpath",
-            $handler->selectorToXpath('xpath', "/html/body/div[4]/div/div/div/form/div/input"));
+        $divrow = array();
+        $divrow = $page->findAll("css", "html.js body.layout1 div#simplemodal-container.simplemodal-container div.simplemodal-wrap
+        div#simplemodal-data.modalContent div.registrationFormContainer form.fos_user_registration_register div.row");
 
-        $surnamefield = $page->find("xpath",
-            $handler->selectorToXpath("xpath", "/html/body/div[4]/div/div/div/form/div[2]/input"));
-
+        $namediv = $divrow[0];
+        $namefield = $namediv->find("css", "input");
         $namefield->setValue($this->generateRandomString(rand(3, 12)));
+        $surnamediv = $divrow[1];
+        $surnamefield = $surnamediv->find("css", "input");
         $surnamefield->setValue($this->generateRandomString(rand(3, 12)));
-        /*$usernamefield;
-        $emailfield;
-        $passwordfield;
-        $passwordagain;*/
+        $usernamediv = $divrow[2];
+        $usernamefield = $usernamediv->find("css", "input");
+        $usernamefield->setValue($this->generateRandomString(rand(5, 12)));
+
+        $emaildiv = $divrow[3];
+        $emailfield = $emaildiv->find("css", "input");
+        $emailfield->setValue($this->generateRandomEmail());
+
+        $passworddiv = $divrow[4];
+        $passwordfield = $passworddiv->find("css", "input");
+        $password = $this->generateRandomPassword(rand(6, 14));
+        $passwordfield->setValue($password);
+
+        $passworddiv2 = $divrow[5];
+        $passwordfield2 = $passworddiv2->find("css", "input");
+        $passwordfield2->setValue($password);
+
+        $useragreement = $divrow[6];
+        $useragreementcheck = $useragreement->find("css", "input");
+        $useragreementcheck->check();
+
+        $divrow[7]->find("css", "input")->click(); // submit form
+
+    }
+
+    public function generateRandomEmail()
+    {
+        $characters = 'abcdefghijklmnopqrstuvwxyz';
+
+        $email = "bdd_".$this->generateRandomString()."@yahoo.com";
+
+/*        $dom = $n = '';
+
+        do {
+            $n = $dom = '';
+            for ($i = 0; $i < rand(5, 15); $i++) {
+                $n .= $characters[rand(0, strlen($characters) - 1)];
+            }
+            for ($i = 0; $i < rand(6, 12); $i++) {
+                $dom .= $characters[rand(0, strlen($characters) - 1)];
+            }
+            $email = $n . "@" . $dom . ".com";
+        } while (filter_var($email, FILTER_VALIDATE_EMAIL));*/
+        return $email;
 
     }
 
@@ -39,6 +81,17 @@ class FeatureContext extends MinkContext
             $randomString .= $characters[rand(0, strlen($characters) - 1)];
         }
         return $randomString;
+    }
+
+    public function generateRandomPassword($length = 10)
+    {
+        $characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPRSTUVYWZ*,./\\#-_0123456789';
+        $randomPassword = '';
+        for ($i = 0; $i < $length; $i++) {
+            $randomPassword .= $characters[rand(0, strlen($characters) - 1)];
+        }
+        return $randomPassword;
+
     }
 
 
