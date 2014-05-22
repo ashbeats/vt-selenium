@@ -10,14 +10,13 @@ Feature: User sets alarm feature
     Then I fill in "username" with "testhesabi"
     Then I fill in "password" with "test1234"
     When I press "_submit"
+    And I wait "1" second
+    Then I should see "Hesabım"
 
-    Then I wait "300" millisecond
     When I go to "/arama"
     When I set the fashion alert
-    And I wait "300" millisecond
 
     When I set the discount alert
-    And I wait "300" millisecond
 
 
 
