@@ -12,10 +12,12 @@ Feature: User profile behaviour test
     Then I fill in "password" with "test1234"
     When I press "_submit"
 
+
   @javascript
   Scenario: go to profile page
     When I go to "/kullanici/profil"
-    Then I should not see "ARADIĞINIZ SAYFAYA ULAŞILAMIYOR :("
+#    Then I should not see "ARADIĞINIZ SAYFAYA ULAŞILAMIYOR :("
+#    And  I should see "Hesabım"
 
 
 
