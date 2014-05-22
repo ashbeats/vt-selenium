@@ -3,13 +3,13 @@ Feature: Scan all vitringez categories
   As a test developer
   I need to able to jump all categories
 
-  @javascript
   Scenario: Scan all categories
     Given I am on homepage
-    When I scan "kadın" category
-    When I scan "erkek" category
-    When I scan "çocuk" category
-    When I scan "ev" category
+    When I scan "all" category
+#    When I scan "kadın" category
+#    When I scan "erkek" category
+#    When I scan "çocuk" category
+#    When I scan "ev" category
 
 
 
