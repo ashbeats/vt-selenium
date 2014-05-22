@@ -14,6 +14,10 @@ Feature: User sets alarm feature
     Then I wait "300" millisecond
     When I go to "/arama"
     When I set the fashion alert
+    And I wait "300" millisecond
+
+    When I set the discount alert
+    And I wait "300" millisecond
 
 
 

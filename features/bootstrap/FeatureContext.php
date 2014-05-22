@@ -5,20 +5,115 @@ use Behat\MinkExtension\Context\MinkContext;
 class FeatureContext extends MinkContext
 {
     /**
-     * @When /^I set the fashion alert$/
+     * @When /^I scan "([^"]*)" category$/
      */
-    public function iSetTheFashionAlert()
+    public function iScanCategory($category)
     {
         $session = $this->getSession();
         $page = $session->getPage();
 
-        $productItem = $page->find("css","html.js body.layout1 div#contentHolder div#mainContent div.catalogListing div.catalogContainer
+        $category_url = $this->setUrl($category);
+        $session->visit($category_url);
+
+        $productanno = $page->findById("filterProgressBar")->getText();
+        $numofproduct = intval($productanno);
+
+        echo $category . " kategorisinde toplam: " . $numofproduct . " ürün var.\n";
+
+        $innerDiv = $page->find('xpath', '//*[@id="filterProvider"]/div/div/div');
+        $providersdiv = $innerDiv->findAll('css', 'div');
+
+        $totalprovider = count($providersdiv);
+        echo "Provider sayısı: " . $totalprovider . "\n\n";
+
+        $providers = array();
+
+        echo $category . " Kategorisi\n___________________\n";
+        for ($i = 1; $i < $totalprovider; $i++) {
+            $pr = $providersdiv[$i]->find('css', 'input');
+            $data_url = $pr->getAttribute("data-url");
+            $provider_name = $pr->getAttribute("data-name");
+            $url = $category_url . "/" . $data_url . "-magazasi";
+            $session->visit($url);
+
+            $subproduct = intval($page->findById("filterProgressBar")->getText());
+            $providers[$provider_name] = $subproduct; // log
+
+            if ($subproduct <= 0) {
+                echo $provider_name . " de/da ürün yok!\n";
+//                throw new Exception("\nUrunler siteye eklenmemiş.\n");
+            } else {
+                echo $provider_name . "   -> " . $subproduct . " ürün var\n";
+            }
+            $session->visit($category_url);
+
+        }
+
+    }
+
+    public function setUrl($category)
+    {
+        switch ($category) {
+            case "kadın":
+                $data_url = "kadin";
+                $url = "http://vitringez.com/" . $data_url;
+                break;
+            case "erkek":
+                $data_url = "erkek";
+                $url = "http://vitringez.com/" . $data_url;
+                break;
+            case "çocuk";
+                $data_url = "cocuk";
+                $url = "http://vitringez.com/" . $data_url;
+                break;
+            case "ev";
+                $data_url = "ev";
+                $url = "http://vitringez.com/" . $data_url;
+                break;
+        }
+        return $url;
+    }
+
+
+    /**
+     * @When /^I set the discount alert$/
+     */
+    public function iSetTheDiscountAlert()
+    {
+        $session = $this->getSession();
+        $page = $session->getPage();
+
+        $session->visit("http://www.vitringez.com/urun/bisous-rose-metalik-canta-207258");
+        $page->find("xpath", '//*[@id="content"]/div[1]/div/div[2]/a[2]')->click();
+
+        for ($i = 1; $i <= 4; $i++) {
+            $page->find("xpath", '//*[@id="simplemodal-data"]/form/div/label[' . $i . ']/input')->check();
+        }
+        $page->find("xpath", '//*[@id="simplemodal-data"]/form/input[1]')->click();
+
+    }
+
+    /**
+     * @When /^I set the fashion alert$/
+     */
+    public function iSetTheFashionAlert() // mouseOver broken
+    {
+        $session = $this->getSession();
+        $page = $session->getPage();
+
+        /*$productItem = $page->find("css","html.js body.layout1 div#contentHolder div#mainContent div.catalogListing div.catalogContainer
         div#catalogResult div.productListingContainer div.productListing div.productItem");
 
-        $productItem->mouseOver();
+        $productItem->mouseOver();*/
 
+        $session->visit("http://www.vitringez.com/urun/zoopa-zoopa-mor-canta-814916");
+        $alertbutton = $page->find("xpath", '//*[@id="content"]/div[1]/div/div[2]/a[1]');
+        $alertbutton->click();
 
-
+        for ($i = 1; $i <= 3; $i++) {
+            $page->find("xpath", '//*[@id="simplemodal-data"]/form/div/label[' . $i . ']/input')->check();
+        }
+        $page->find("xpath", '//*[@id="simplemodal-data"]/form/input[1]')->click(); // send fashion alert request
     }
 
     /**
@@ -75,13 +170,11 @@ class FeatureContext extends MinkContext
         $totalproduct = $page->findById("filterProgressBar")->getText();
         echo "\n\nToplam " . $totalproduct . "\n";
 
-        $innerdiv = $page->find('css', 'html.js body.layout1 div#contentHolder div#mainContent div.catalogListing div.catalogContainer div#catalogResult
-        div.productListingContainer div.productListing div#topFilterContainer div.filterInner div.filterItemsContainer div.selectBoxes
-        div#filterProvider.filterBox div.selectContainer div.selectDropdown div.inner');
+        $innerdiv = $page->find("xpath", '//*[@id="filterProvider"]/div/div/div');
         $providerdiv = $innerdiv->findAll('css', 'div');
 
         $totalprovider = count($providerdiv);
-        echo "Provider sayısı:" . $totalprovider . "\n\n";
+        echo "Provider sayısı: " . $totalprovider . "\n\n";
 
         $provider_name = array();
         $provider_product = array();
@@ -113,7 +206,7 @@ class FeatureContext extends MinkContext
     {
         $characters = 'abcdefghijklmnopqrstuvwxyz';
 
-        $email = "bdd_".$this->generateRandomString()."@yahoo.com";
+        $email = "bdd_" . $this->generateRandomString() . "@yahoo.com";
 
         /*        $dom = $n = '';
 
