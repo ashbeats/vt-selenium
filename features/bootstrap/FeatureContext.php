@@ -175,9 +175,11 @@ class FeatureContext extends MinkContext
     /**
      * @Given /^I wait "([^"]*)" second$/
      */
-    public function iWaitMillisecond($time)
+    public function iWaitMillisecond($duration)
     {
-        $this->getSession()->wait(intval($time) * 1000, '(0 === jQuery.active)');
+        $this->getSession()->wait(intval($duration) * 1000, '(0 === jQuery.active)');
+        //     $this->getSession()->wait($duraction, '(0 === Ajax.activeRequestCount)');
+
     }
 
     public function generateRandomEmail()

@@ -6,8 +6,8 @@ Feature: Scan all vitringez categories
   @javascript
   Scenario: Scan all categories
     Given I am on homepage
-#    When I scan "all" category
-    When I scan "kadın" category
+    When I scan "all" category
+#    When I scan "kadın" category
 #    When I scan "erkek" category
 #    When I scan "çocuk" category
 #    When I scan "ev" category
