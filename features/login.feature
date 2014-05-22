@@ -9,10 +9,13 @@ Feature: login feature
   @javascript
   Scenario: user login
     When I should not see "Hesabım"
-	Then I follow "loginRegisterButton"
+    Then I follow "loginRegisterButton"
     Then I fill in "username" with "testhesabi"
     Then I fill in "password" with "test1234"
     When I press "_submit"
+    And I wait "2" second
+    Then I should see "Hesabım"
+
    # Then I should see "Çıkış" in the "html.js body.layout1 div#contentHolder header#header div#headerContainer aside#headerRight a.borderOnRight" element
 
 
