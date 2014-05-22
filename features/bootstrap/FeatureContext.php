@@ -16,19 +16,32 @@ class FeatureContext extends MinkContext
         $session->visit($category_url);
 
         $productanno = $page->findById("filterProgressBar")->getText();
-        $numofproduct = intval($productanno);
+        if($productanno==null)
+            echo "check xpath of filterProgressBar";
+        else
+            $numofproduct = intval($productanno);
 
-        echo $category . " kategorisinde toplam: " . $numofproduct . " ürün var.\n";
+        if ($category != "all")
+            echo $category . " kategorisinde toplam: " . $numofproduct . " ürün var.\n";
+        else
+            echo "Sitede toplam: " . $numofproduct . " ürün var.\n";
 
         $innerDiv = $page->find('xpath', '//*[@id="filterProvider"]/div/div/div');
-        $providersdiv = $innerDiv->findAll('css', 'div');
+        if($innerDiv==null)
+            echo "check xpath of innerDiv";
+        else
+            $providersdiv = $innerDiv->findAll('css', 'div');
 
         $totalprovider = count($providersdiv);
         echo "Provider sayısı: " . $totalprovider . "\n\n";
 
         $providers = array();
 
-        echo $category . " Kategorisi\n__________________\n";
+        if ($category != "all")
+            echo(ucwords(strtolower($category . " Kategorisi\n__________________\n")));
+        else
+            echo "\e[34mArama Sayfası\n_____________\n\e[0m";
+
         for ($i = 1; $i < $totalprovider; $i++) {
             $pr = $providersdiv[$i]->find('css', 'input');
             $data_url = $pr->getAttribute("data-url");
@@ -48,11 +61,10 @@ class FeatureContext extends MinkContext
             $session->visit($category_url);
 
         }
-        $session->wait(300);
 
     }
 
-    public function setUrl($category) // default value must be included!
+    public function setUrl($category)
     {
         switch ($category) {
             case "kadın":
@@ -71,6 +83,11 @@ class FeatureContext extends MinkContext
                 $data_url = "ev";
                 $url = "http://vitringez.com/" . $data_url;
                 break;
+            case "all";
+                $data_url = "arama";
+                $url = "http://vitringez.com/" . $data_url;
+                break;
+
         }
         return $url;
     }
