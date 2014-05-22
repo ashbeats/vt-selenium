@@ -5,6 +5,21 @@ use Behat\MinkExtension\Context\MinkContext;
 class FeatureContext extends MinkContext
 {
     /**
+     * @When /^I fill profile details$/
+     */
+    public function iFillProfileDetails()
+    {
+        $session = $this->getSession();
+        $page = $session->getPage();
+
+        $page->find('css','#vitringez_user_profile_form_biography')
+            ->setValue( $this->generateRandomString(16) );
+        $page->find('css', '#vitringez_user_profile_form_city')
+            ->setValue( $this->generateRandomString(7));
+
+    }
+
+    /**
      * @When /^I scan "([^"]*)" category$/
      */
     public function iScanCategory($category)
@@ -175,10 +190,13 @@ class FeatureContext extends MinkContext
     /**
      * @Given /^I wait "([^"]*)" second$/
      */
-    public function iWaitMillisecond($duration)
+    public function iWaitSecond($duration)
     {
-        $this->getSession()->wait(intval($duration) * 1000, '(0 === jQuery.active)');
-        //     $this->getSession()->wait($duraction, '(0 === Ajax.activeRequestCount)');
+//        $this->getSession()->wait(intval($duration) * 1000, '(0 === jQuery.active)');
+        $this->getSession()->wait(intval($duration)*1000,
+            '(0 === jQuery.active && 0 === jQuery(\':animated\').length)');
+
+//        $this->getSession()->wait($duration, '(0 === Ajax.activeRequestCount)');
 
     }
 

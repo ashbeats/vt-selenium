@@ -16,7 +16,6 @@ Feature: login feature
     And I wait "1" second
     Then I should see "Hesabım"
 
-   # Then I should see "Çıkış" in the "html.js body.layout1 div#contentHolder header#header div#headerContainer aside#headerRight a.borderOnRight" element
 
 
 

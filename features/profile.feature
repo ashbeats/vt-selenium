@@ -12,9 +12,16 @@ Feature: User profile behaviour test
     Then I fill in "password" with "test1234"
     When I press "_submit"
     And I wait "2" second
+    Then I should see "Hesabım"
     When I go to "/kullanici/profil"
     Then I should not see "ARADIĞINIZ SAYFAYA ULAŞILAMIYOR :("
     And  I should see "Hesabım"
+    Then I attach the file "jean-luc-picat.jpg" to "vitringez_user_profile_form[profilePictureFile]"
+    When I fill profile details
+    Then I press "Güncelle"
+    Then I should see "Profiliniz başarıyla güncellendi" in the "#content > div > section > div.alert.alert-success" element
+    When I reload the page
+
 
 
 
