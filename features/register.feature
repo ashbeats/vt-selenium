@@ -10,7 +10,7 @@ Feature: register feature
     And I follow "loginRegisterButton"
     When I fill in registration form
 #    Then I should see "Hesabım"
-    Then I wait "4000" millisecond
+    Then I wait "4" second
     Then I go to "/arama"
 
 
