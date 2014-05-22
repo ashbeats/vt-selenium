@@ -16,7 +16,7 @@ class FeatureContext extends MinkContext
         $session->visit($category_url);
 
         $productanno = $page->findById("filterProgressBar")->getText();
-        if($productanno==null)
+        if ($productanno == null)
             echo "check xpath of filterProgressBar";
         else
             $numofproduct = intval($productanno);
@@ -27,7 +27,7 @@ class FeatureContext extends MinkContext
             echo "Sitede toplam: " . $numofproduct . " ürün var.\n";
 
         $innerDiv = $page->find('xpath', '//*[@id="filterProvider"]/div/div/div');
-        if($innerDiv==null)
+        if ($innerDiv == null)
             echo "check xpath of innerDiv";
         else
             $providersdiv = $innerDiv->findAll('css', 'div');
@@ -38,7 +38,7 @@ class FeatureContext extends MinkContext
         $providers = array();
 
         if ($category != "all")
-            echo(ucwords(strtolower($category . " Kategorisi\n__________________\n")));
+            echo "\e[34m" . ucwords(strtolower($category . " Kategorisi\n________________\n")) . "\e[0m";
         else
             echo "\e[34mArama Sayfası\n_____________\n\e[0m";
 
@@ -66,30 +66,26 @@ class FeatureContext extends MinkContext
 
     public function setUrl($category)
     {
+        $base_url = "http://vitringez.com/";
         switch ($category) {
             case "kadın":
                 $data_url = "kadin";
-                $url = "http://vitringez.com/" . $data_url;
                 break;
             case "erkek":
                 $data_url = "erkek";
-                $url = "http://vitringez.com/" . $data_url;
                 break;
             case "çocuk";
                 $data_url = "cocuk";
-                $url = "http://vitringez.com/" . $data_url;
                 break;
             case "ev";
                 $data_url = "ev";
-                $url = "http://vitringez.com/" . $data_url;
                 break;
             case "all";
                 $data_url = "arama";
-                $url = "http://vitringez.com/" . $data_url;
                 break;
 
         }
-        return $url;
+        return $base_url . $data_url;
     }
 
 
@@ -181,7 +177,7 @@ class FeatureContext extends MinkContext
      */
     public function iWaitMillisecond($time)
     {
-        $this->getSession()->wait(intval($time)*1000);
+        $this->getSession()->wait(intval($time) * 1000);
     }
 
     public function generateRandomEmail()
