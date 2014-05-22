@@ -11,6 +11,6 @@ Feature: logout feature
     And I fill in "username" with "testhesabi"
     And I fill in "password" with "test1234"
     Then I press "_submit"
-
-    #Then I should see "Çıkış" in the "html.js body.layout1 div#contentHolder header#header div#headerContainer aside#headerRight a.borderOnRight" element
+    And I wait "1" second
+    Then I should see "Hesabım"
     Then I go to "/kullanici/cikis"
