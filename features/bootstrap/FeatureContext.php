@@ -28,7 +28,7 @@ class FeatureContext extends MinkContext
 
         $providers = array();
 
-        echo $category . " Kategorisi\n___________________\n";
+        echo $category . " Kategorisi\n__________________\n";
         for ($i = 1; $i < $totalprovider; $i++) {
             $pr = $providersdiv[$i]->find('css', 'input');
             $data_url = $pr->getAttribute("data-url");
@@ -40,7 +40,7 @@ class FeatureContext extends MinkContext
             $providers[$provider_name] = $subproduct; // log
 
             if ($subproduct <= 0) {
-                echo $provider_name . " de/da ürün yok!\n";
+                echo $provider_name . "\033[01;31m de/da ürün yok! \033[0m\n";
 //                throw new Exception("\nUrunler siteye eklenmemiş.\n");
             } else {
                 echo $provider_name . "   -> " . $subproduct . " ürün var\n";
@@ -48,10 +48,11 @@ class FeatureContext extends MinkContext
             $session->visit($category_url);
 
         }
+        $session->wait(300);
 
     }
 
-    public function setUrl($category)
+    public function setUrl($category) // default value must be included!
     {
         switch ($category) {
             case "kadın":
