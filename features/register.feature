@@ -9,11 +9,8 @@ Feature: register feature
     Then I should not see "Hesabım"
     And I follow "loginRegisterButton"
     When I fill in registration form
-    Then I wait "3" second
-        Then I should see "Hesabım"
-
-#    Then I go to "/arama"
-
+    Then I wait "1" second
+    Then I should see "Hesabım"
 
 
 

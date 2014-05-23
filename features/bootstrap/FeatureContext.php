@@ -214,33 +214,24 @@ class FeatureContext extends MinkContext
 
         $page->findById("newUserLink")->click();
 
-        $divrow = array();
-        $divrow = $page->findAll("css", "html.js body.layout1 div#simplemodal-container.simplemodal-container div.simplemodal-wrap
+        $session->wait(3);
+
+        $registerRow = $page->findAll("css", "html.js body.layout1 div#simplemodal-container.simplemodal-container div.simplemodal-wrap
         div#simplemodal-data.modalContent div.registrationFormContainer form.fos_user_registration_register div.row");
 
-
-        $namefield = $divrow[0]->find("css", "input");
-        $namefield->setValue($this->generateRandomString(rand(3, 12)));
-
-        $surnamefield = $divrow[1]->find("css", "input");
-        $surnamefield->setValue($this->generateRandomString(rand(3, 12)));
-
-        $usernamefield = $divrow[2]->find("css", "input");
-        $usernamefield->setValue($this->generateRandomString(rand(5, 12)));
-
-        $emailfield = $divrow[3]->find("css", "input");
-        $emailfield->setValue($this->generateRandomEmail());
-
-        $passwordfield = $divrow[4]->find("css", "input");
+        $divRow = array();
+        for ($i = 0; $i < count($registerRow); $i++) {
+            $divRow[] = $registerRow[$i]->find("css", "input");
+        }
+        $divRow[0]->setValue($this->generateRandomString(rand(3, 12)));
+        $divRow[1]->setValue($this->generateRandomString(rand(3, 12)));
+        $divRow[2]->setValue($this->generateRandomString(rand(5, 12)));
+        $divRow[3]->setValue($this->generateRandomEmail());
         $password = $this->generateRandomPassword(rand(6, 14));
-        $passwordfield->setValue($password);
-
-        $passwordfield2 = $divrow[5]->find("css", "input");
-        $passwordfield2->setValue($password);
-
-        $divrow[6]->find("css", "input")->check();
-
-        $divrow[7]->find("css", "input")->click(); // submit form
+        $divRow[4]->setValue($password);
+        $divRow[5]->setValue($password);
+        $divRow[6]->find("css", "input")->check();
+        $divRow[7]->find("css", "input")->click();
 
     }
 
