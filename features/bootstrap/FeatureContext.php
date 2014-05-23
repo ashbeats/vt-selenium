@@ -40,7 +40,7 @@ class FeatureContext extends MinkContext
 
         $alg == "descending" ? arsort($sorted) : asort($sorted);
 
-        echo ($sorted == $prices) ? "\e[34m".$alg . " algorithm works properly\n" :
+        echo ($sorted == $prices) ? "\e[34m" . $alg . " algorithm works properly\n" :
             "check \"" . $alg . "\" algorithm. It has a problem!\e[0m\n";
 
     }
@@ -93,31 +93,27 @@ class FeatureContext extends MinkContext
         $session->visit($category_url);
 
         $productanno = $page->findById("filterProgressBar")->getText();
-        if ($productanno == null)
-            echo "check id of filterProgressBar";
-        else
+        if ($productanno == null) {
+            $err = "filterProgressBar could not fetched!\n";
+            throw new Exception($err);
+        } else
             $numofproduct = intval($productanno);
 
-        if ($category != "all")
-            echo $category . " kategorisinde toplam: " . $numofproduct . " ürün var.\n";
-        else
-            echo "Sitede toplam: " . $numofproduct . " ürün var.\n";
+        echo ($category != "all") ? $category . " kategorisinde toplam: " . $numofproduct . " ürün var.\n" :
+            "Sitede toplam: " . $numofproduct . " ürün var.\n";
 
         $innerDiv = $page->find('xpath', '//*[@id="filterProvider"]/div/div/div');
-        if ($innerDiv == null)
-            echo "check xpath of innerDiv";
-        else
+        if ($innerDiv == null) {
+            $err = "innerDiv could not fetched!\n";
+            throw new Exception($err);
+        } else
             $providersdiv = $innerDiv->findAll('css', 'div');
 
         $totalprovider = count($providersdiv);
-        echo "Provider sayısı: " . $totalprovider . "\n\n";
+        echo "Provider sayısı: " . $totalprovider . "\n";
 
-        $providers = array();
-
-        if ($category != "all")
-            echo "\e[34m" . ucwords(strtolower($category . " Kategorisi\n________________\n")) . "\e[0m";
-        else
-            echo "\e[34mArama Sayfası\n_____________\n\e[0m";
+        echo ($category != "all") ? "\e[34m" . ucwords(strtolower($category . " Kategorisi\n________________\n")) . "\e[0m" :
+            "\e[34mArama Sayfası\n_____________\n\e[0m";
 
         for ($i = 1; $i < $totalprovider; $i++) {
             $pr = $providersdiv[$i]->find('css', 'input');
@@ -129,12 +125,8 @@ class FeatureContext extends MinkContext
             $subproduct = intval($page->findById("filterProgressBar")->getText());
             $providers[$provider_name] = $subproduct; // log
 
-            if ($subproduct <= 0) {
-                echo $provider_name . "\033[01;31m de/da ürün yok! \033[0m\n";
-//                throw new Exception("\nUrunler siteye eklenmemiş.\n");
-            } else {
-                echo $provider_name . "   -> " . $subproduct . " ürün var\n";
-            }
+            echo ($subproduct <= 0) ? $provider_name . "\033[01;31m de/da ürün yok! \033[0m\n" :
+                $provider_name . "   -> " . $subproduct . " ürün var\n";
             $session->visit($category_url);
 
         }
@@ -198,7 +190,11 @@ class FeatureContext extends MinkContext
 
         $session->visit("http://www.vitringez.com/urun/zoopa-zoopa-mor-canta-814916");
         $alertbutton = $page->find("xpath", '//*[@id="content"]/div[1]/div/div[2]/a[1]');
-        $alertbutton->click();
+        if ($alertbutton == null) {
+            $err = "alertButton could not fetched!\n";
+            throw new Exception($err);
+        } else
+            $alertbutton->click();
 
         for ($i = 1; $i <= 3; $i++) {
             $page->find("xpath", '//*[@id="simplemodal-data"]/form/div/label[' . $i . ']/input')->check();
