@@ -17,6 +17,8 @@ class FeatureContext extends MinkContext
         $page->find('css', '#vitringez_user_profile_form_city')
             ->setValue( $this->generateRandomString(7));
 
+        $page->find('xpath','//*[@id="vitringez_user_profile_form_newsletterSubscribe"]')
+            ->uncheck();
     }
 
     /**
