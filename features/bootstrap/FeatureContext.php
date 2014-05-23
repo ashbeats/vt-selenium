@@ -5,6 +5,67 @@ use Behat\MinkExtension\Context\MinkContext;
 class FeatureContext extends MinkContext
 {
     /**
+     * @When /^I check "([^"]*)" sort algorithm$/
+     */
+    public function iCheckSortAlgorithm($alg)
+    {
+        $session = $this->getSession();
+        $page = $session->getPage();
+
+        if (($algorithm_url = $this->setAlgorithm($alg)) == ($search = "http://vitringez.com/arama")) {
+            $err =  "there is no sorting algorithm called \"" . $alg . "\" on the site\n";
+            throw new Exception($err);
+        }
+
+        $session->visit($algorithm_url);
+
+        for ($i = 3; $i < 27; $i++) {
+            $prices_em[] = $page->find('css',
+                '#catalogResult > div > div > div:nth-child(' . $i . ') > div.productDetail > a > span.prices > em.new');
+        }
+
+        foreach ($prices_em as $n) {
+
+            if ($n == null) {
+                $err =  "span.prices > em.new could not fetched...\ncheck span.prices > em.new css path!\n";
+                throw new Exception($err);
+            }
+        }
+
+        foreach ($prices_em as $d) {
+            $prices[] = (float)str_replace(",", "", $d->getText());
+        }
+
+        $sorted = $prices; // copy new array
+
+        $alg == "descending" ? arsort($sorted) : asort($sorted);
+
+        echo ($sorted == $prices) ? $alg . " algorithm works properly\n" :
+            "check \"" . $alg . "\" algorithm. It has a problem!\n";
+
+
+    }
+
+    private function setAlgorithm($alg)
+    {
+        $base_url = "http://vitringez.com/";
+        switch ($alg) {
+            case "ascending":
+                $sort_url = "arama?sort=price|asc";
+                break;
+            case "descending":
+                $sort_url = "arama?sort=price|desc";
+                break;
+            default:
+                $sort_url = "arama";
+                break;
+        }
+        return $base_url . $sort_url;
+
+    }
+
+
+    /**
      * @When /^I fill profile details$/
      */
     public function iFillProfileDetails()
@@ -12,12 +73,12 @@ class FeatureContext extends MinkContext
         $session = $this->getSession();
         $page = $session->getPage();
 
-        $page->find('css','#vitringez_user_profile_form_biography')
-            ->setValue( $this->generateRandomString(16) );
+        $page->find('css', '#vitringez_user_profile_form_biography')
+            ->setValue($this->generateRandomString(16));
         $page->find('css', '#vitringez_user_profile_form_city')
-            ->setValue( $this->generateRandomString(7));
+            ->setValue($this->generateRandomString(7));
 
-        $page->find('xpath','//*[@id="vitringez_user_profile_form_newsletterSubscribe"]')
+        $page->find('xpath', '//*[@id="vitringez_user_profile_form_newsletterSubscribe"]')
             ->uncheck();
     }
 
@@ -34,7 +95,7 @@ class FeatureContext extends MinkContext
 
         $productanno = $page->findById("filterProgressBar")->getText();
         if ($productanno == null)
-            echo "check xpath of filterProgressBar";
+            echo "check id of filterProgressBar";
         else
             $numofproduct = intval($productanno);
 
@@ -104,7 +165,6 @@ class FeatureContext extends MinkContext
         }
         return $base_url . $data_url;
     }
-
 
     /**
      * @When /^I set the discount alert$/
@@ -195,7 +255,7 @@ class FeatureContext extends MinkContext
     public function iWaitSecond($duration)
     {
 //        $this->getSession()->wait(intval($duration) * 1000, '(0 === jQuery.active)');
-        $this->getSession()->wait(intval($duration)*1000,
+        $this->getSession()->wait(intval($duration) * 1000,
             '(0 === jQuery.active && 0 === jQuery(\':animated\').length)');
 
 //        $this->getSession()->wait($duration, '(0 === Ajax.activeRequestCount)');
