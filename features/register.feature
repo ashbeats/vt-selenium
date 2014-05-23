@@ -8,8 +8,9 @@ Feature: register feature
     Given I am on homepage
     Then I should not see "Hesabım"
     And I follow "loginRegisterButton"
+    And I wait "2" second
     When I fill in registration form
-    Then I wait "1" second
+    Then I wait "2" second
     Then I should see "Hesabım"
 
 

@@ -15,8 +15,7 @@ Feature: User sets alarm feature
 
     When I go to "/arama"
     When I set the fashion alert
-
-#    When I set the discount alert
+    When I set the discount alert
 
 
 
