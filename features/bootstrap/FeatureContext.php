@@ -13,7 +13,7 @@ class FeatureContext extends MinkContext
         $page = $session->getPage();
 
         if (($algorithm_url = $this->setAlgorithm($alg)) == ($search = "http://vitringez.com/arama")) {
-            $err =  "there is no sorting algorithm called \"" . $alg . "\" on the site\n";
+            $err = "there is no sorting algorithm called \"" . $alg . "\" on the site\n";
             throw new Exception($err);
         }
 
@@ -27,7 +27,7 @@ class FeatureContext extends MinkContext
         foreach ($prices_em as $n) {
 
             if ($n == null) {
-                $err =  "span.prices > em.new could not fetched...\ncheck span.prices > em.new css path!\n";
+                $err = "span.prices > em.new could not fetched...\ncheck span.prices > em.new css path!\n";
                 throw new Exception($err);
             }
         }
@@ -40,9 +40,8 @@ class FeatureContext extends MinkContext
 
         $alg == "descending" ? arsort($sorted) : asort($sorted);
 
-        echo ($sorted == $prices) ? $alg . " algorithm works properly\n" :
-            "check \"" . $alg . "\" algorithm. It has a problem!\n";
-
+        echo ($sorted == $prices) ? "\e[34m".$alg . " algorithm works properly\n" :
+            "check \"" . $alg . "\" algorithm. It has a problem!\e[0m\n";
 
     }
 
@@ -142,7 +141,7 @@ class FeatureContext extends MinkContext
 
     }
 
-    public function setUrl($category)
+    private function setUrl($category)
     {
         $base_url = "http://vitringez.com/";
         switch ($category) {
