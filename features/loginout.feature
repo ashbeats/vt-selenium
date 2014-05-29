@@ -7,7 +7,7 @@ Feature: log in/out feature
     Given I am on homepage
 
   @javascript
-  Scenario: logout from site
+  Scenario: login then logout from site
     And I should not see "Hesabım"
     And I follow "loginRegisterButton"
     And I wait "1" second

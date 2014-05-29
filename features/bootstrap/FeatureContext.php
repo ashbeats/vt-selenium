@@ -3,67 +3,105 @@ use Behat\MinkExtension\Context\MinkContext;
 
 class FeatureContext extends MinkContext
 {
+    public $exception_message = '';
+    public $warning_message = '';
+    public $base_url = "http://vitringez.com/";
+
 
     /**
      * @Then /^I mix some filter$/
      */
     public function iMixSomeFilter()
     {
-        $base_url = "http://vitringez.com/";
         $mail_message = '';
 
-            try {
+        try {
             $session = $this->getSession();
             $page = $session->getPage();
 
             echo "\e[31m===========\nGenel Site\n===========\n\e[0m";
             $mail_message .= "<h1 style=\"color:#CB0C0C;\">Genel Site</h2><br>\n";
-            $providers = $page->find("css", "#filterProvider > div > div > div")->findAll("css", "div");
-            echo "Provider sayısı: <" . count($providers) . ">\n";
-            $mail_message .= "<div id='generalinfo'>\n<span>Provider sayısı: \"" . count($providers) . "\"</span><br>\n";
 
+            $providers_container = $page->find("css", "#filterProvider > div > div > div");
+            if (!is_object($providers_container)) {
+                $this->exception_message .= "__! Check providers container path !__\n";
+                throw new Exception($this->exception_message);
+            }
+            $providers = $providers_container->findAll("css", "div");
+            if (count($providers) == 0) {
+                $this->exception_message .= "__! Check providers path. Maybe it has changed !__\n";
+                throw new Exception($this->exception_message);
+            }
+            $total_providers = count($providers);
+            echo "Provider sayısı: <" . $total_providers . ">\n";
+            $mail_message .= "<div id='generalinfo'>\n<span>Provider sayısı: \"" . $total_providers . "\"</span><br>\n";
 
-            $brands = $page->find('css', '#filterBrands > div > div > div')->findAll('css', 'div');
-            echo "Brand sayısı: <" . count($brands) . ">\n";
-            echo "Toplam ürün: <" . intval($this->getFilterProgressBar($page)) . ">\n\n";
-            $mail_message .= "<span> Brand sayısı: \"" . count($brands) . "\"</span><br>\n" .
-                "<span> Toplam ürün: \"" . intval($this->getFilterProgressBar($page)) . "\"</span><br>\n</div>\n";
+            $brands_container = $page->find('css', '#filterBrands > div > div > div');
+            if (!is_object($brands_container)) {
+                $this->exception_message = "__! Check brand container path !__";
+                throw new Exception($this->exception_message);
+            }
+            $brands = $brands_container->findAll('css', 'div');
+            $total_brand = count($brands);
+            if ($total_brand == 0) {
+                $this->exception_message = "__! Check brands path or there is no brand on site !__";
+                throw new Exception($this->exception_message);
+            }
+            echo "Brand sayısı: <" . $total_brand . ">\n";
 
-            $colors = $page->find('css', '#filterColors > div > div > div > ul')
-                ->findAll('css', 'li');
+            $total_product = intval($this->getFilterProgressBar($page));
+            if ($total_product == 0) {
+                $this->exception_message = "__! There is no product on site !__";
+                throw new Exception($this->exception_message);
+            }
+            echo "Toplam ürün: <" . $total_product . ">\n\n";
+
+            $mail_message .= "<span> Brand sayısı: \"" . $total_brand . "\"</span><br>\n" .
+                "<span> Toplam ürün: \"" . $total_product . "\"</span><br>\n</div>\n";
+
+            $colors_container = $page->find('css', '#filterColors > div > div > div > ul');
+            if (!is_object($colors_container)) {
+                $this->exception_message = "__! Check colors container path !__";
+                throw new Exception($this->exception_message);
+            }
+            $colors = $colors_container->findAll('css', 'li');
+            if (count($colors) == 0) {
+                $this->exception_message = "__! There is no color on site or check path !__";
+                throw new Exception($this->exception_message);
+            }
 
             // one color
             $simple_color = $this->getRandColor($colors);
-            $session->visit($base_url . $simple_color['url']);
+            $session->visit($this->base_url . $simple_color['url']);
 
             echo "\e[34m=============\nRenk Filtresi\n=============\n\e[0m";
             $mail_message .= "\n<h2 id='colorfilter'>" . "Renk Filtresi" . "</h2>\n";
 
-            echo "\"" . $simple_color['name'] . "\" seçili iken <" .
+            echo "\"" . $simple_color['data-name'] . "\" seçili iken <" .
                 intval($this->getFilterProgressBar($page)) .
                 "> ürün var.\n";
-            $mail_message .= "<span>\"" . $simple_color['name'] . "\" seçili iken \"" .
+            $mail_message .= "<span>\"" . $simple_color['data-name'] . "\" seçili iken \"" .
                 intval($this->getFilterProgressBar($page)) . "\" ürün var.</span><br>\n";
 
             // more than one color
             $color1 = $this->getRandColor($colors);
             $color2 = $this->getRandColor($colors);
             $session->visit(
-                $base_url . $color1['key'] . "-ve-" . $color2['key'] . "-renkli"
+                $this->base_url . $color1['key'] . "-ve-" . $color2['key'] . "-renkli"
             );
 
-            echo "\"" . $color1['name'] . "\" ve \"" . $color2['name'] . "\" seçili iken <" .
+            echo "\"" . $color1['data-name'] . "\" ve \"" . $color2['data-name'] . "\" seçili iken <" .
                 intval(
                     $this->getFilterProgressBar($page)
                 ) . "> ürün var.\n\n";
-            $mail_message .= "<span>\"" . $color1['name'] . "\" ve \"" . $color2['name'] . "\" seçili iken \"" .
+            $mail_message .= "<span>\"" . $color1['data-name'] . "\" ve \"" . $color2['data-name'] . "\" seçili iken \"" .
                 intval($this->getFilterProgressBar($page)) . "\" ürün var.</span><br>\n\n";
 
             // price filter
             $color1 = $this->getRandColor($colors);
             $color2 = $this->getRandColor($colors);
             $session->visit(
-                $base_url . $color1['key'] . "-ve-" . $color2['key'] . "-renkli"
+                $this->base_url . $color1['key'] . "-ve-" . $color2['key'] . "-renkli"
             );
 
             $range_inputs = $page->find('css', '#filterPrice > div > div.range-slider-input')
@@ -80,26 +118,26 @@ class FeatureContext extends MinkContext
                 $max_price . '%5D';
 
             $session->visit(
-                $base_url . $color1['key'] . "-ve-" . $color2['key'] . "-renkli" . $criteria_url
+                $this->base_url . $color1['key'] . "-ve-" . $color2['key'] . "-renkli" . $criteria_url
             );
 
             echo "\e[35m==================\nRenk+Fiyat Filtresi\n==================\n\e[0m";
             $mail_message .= "<h3 id='color+price'>" . "Renk+Fiyat Filtresi" . "</h3><br>\n";
 
 
-            echo "\"" . $color1['name'] . "\" ve \"" . $color2['name'] . "\" seçili iken, [" .
+            echo "\"" . $color1['data-name'] . "\" ve \"" . $color2['data-name'] . "\" seçili iken, [" .
                 $min_price . " - " . $max_price . "] fiyat aralığında: <" .
                 intval($this->getFilterProgressBar($page)) . "> ürün var.\n\n";
-            $mail_message .= "<span>\"" . $color1['name'] . "\" ve \"" . $color2['name'] . "\" seçili iken, [" .
+            $mail_message .= "<span>\"" . $color1['data-name'] . "\" ve \"" . $color2['data-name'] . "\" seçili iken, [" .
                 $min_price . " - " . $max_price . "] fiyat aralığında: \"" .
                 intval($this->getFilterProgressBar($page)) . "\" ürün var.</span><br>\n\n";
 
 
             // brand
-            $session->visit($base_url . "arama/");
+            $session->visit($this->base_url . "arama/");
 
             $brand_attr = $this->getRandBrand($brands);
-            $session->visit($base_url . $brand_attr['url']);
+            $session->visit($this->base_url . $brand_attr['url']);
 
             echo "\e[36m==============\nMarka Filtresi\n==============\n\e[0m";
             $mail_message .= "<h4 id='brandfilter'> Marka Filtresi </h4> ";
@@ -115,14 +153,14 @@ class FeatureContext extends MinkContext
             $brand1 = $this->getRandBrand($brands);
             $brand2 = $this->getRandBrand($brands);
 
-            $session->visit($base_url . $brand1['data-url'] . "-ve-" . $brand2['url']);
+            $session->visit($this->base_url . $brand1['data-url'] . "-ve-" . $brand2['url']);
             echo "\"" . $brand1['data-name'] . "\" ve \"" . $brand2['data-name'] . "\" seçili iken: <" .
                 intval($this->getFilterProgressBar($page)) . "> ürün var.\n";
-            $d = "<span>\"" . $brand1['data-name'] . "\" ve \"" . $brand2['data-name'] . "\" seçili iken \"" .
+            $mail_message .= "<span>\"" . $brand1['data-name'] . "\" ve \"" . $brand2['data-name'] . "\" seçili iken \"" .
                 intval($this->getFilterProgressBar($page)) . "\" ürün var.</span><br>\n";
 
             // brand + provider
-            $session->visit($base_url . "arama/");
+            $session->visit($this->base_url . "arama/");
             $brand_attr = $this->getRandBrand($brands);
             $providers = $page->find("css", "#filterProvider > div > div > div")->findAll("css", "div");
 
@@ -133,41 +171,24 @@ class FeatureContext extends MinkContext
                 }
             }
 
-            $session->visit($base_url . $brand_attr['url'] . $fl_provider_url);
+            $session->visit($this->base_url . $brand_attr['url'] . $fl_provider_url);
 
             echo "\"" . $brand_attr['data-name'] . "\" ile \"" . $fl_provider_name . "\" mağazası seçili iken <" .
                 intval($this->getFilterProgressBar($page)) . "> ürüm var.\n";
-            $mail_message .= "<span> \"".$brand_attr['data-name']."\" ile  \"".$fl_provider_name."\" mağazası seçili iken \"".
-                intval($this->getFilterProgressBar($page))."\" ürün var.</span><br>\n";
+            $mail_message .= "<span> \"" . $brand_attr['data-name'] . "\" ile  \"" . $fl_provider_name . "\" mağazası seçili iken \"" .
+                intval($this->getFilterProgressBar($page)) . "\" ürün var.</span><br>\n";
 
-            echo $mail_message;
+            echo $mail_message . "\n";
+            echo $this->warning_message;
 
-//            $this->sendMail($mail_message);
+//            $this->sendMail($mail_message.$this->warning_message);
 
 
-        } /*catch (\Behat\Mink\Exception\Exception $e) {
-            $mail_message .= "<br>\n" . $e->getMessage();
-            echo $e->getMessage();
-            $this->sendMail($mail_message);
-        }*/
-        catch(\Exception $ex){
-            echo "genel excep çalştı\n";
-        }
-        catch(\Behat\Mink\Exception\Exception $e2)
-        {
-            echo "e2 çalıştı \n";
-        }
-        catch(\Behat\Behat\Exception\Exception $e5){
-            echo "e5 çalıştı \n";
-        }
-        catch(\Symfony\Component\Config\Definition\Exception\Exception $e3)
-        {
-            echo "e3 çalıştı \n";
-        }
+        } catch (Exception $e) {
+            /*$mail_message .= "<br>\n" . $e->getMessage();
+            $this->sendMail($mail_message);*/
 
-        catch(\WebDriver\Exception $e4){
-            echo "e4 çalıştı \n";
-
+            throw new Exception($e->getMessage());
         }
     }
 
@@ -175,18 +196,16 @@ class FeatureContext extends MinkContext
     {
         /**
          * You have to setup PHPMailer to use this method
-         * https://github.com/PHPMailer/PHPMailer
+         * @link https://github.com/PHPMailer/PHPMailer
          */
         $mail = new PHPMailer;
         $mail->isSMTP();
         $mail->SMTPDebug = 1;
         $mail->SMTPAuth = true;
         $mail->SMTPSecure = 'ssl';
-        $mail->addAddress('report@example.com', 'Receiver Name');
+        $mail->addAddress('test@vitringez.com', 'muhasturk');
         $mail->WordWrap = 50;
-
         $mail->isHTML(true);
-
         $mail->Subject = 'BDD test report';
         $mail->Body = $message;
 
@@ -200,16 +219,38 @@ class FeatureContext extends MinkContext
 
     private function getFilterProgressBar($page)
     {
-        return $page->findById("filterProgressBar")->getText();
+        $progressBar = $page->findById("filterProgressBar");
+        if (!is_object($progressBar)) {
+            $this->exception_message = "__! Check filterProgressBar id or path !__";
+            throw new Exception($this->exception_message);
+        }
+        return $progressBar->getText();
+
     }
 
     private function getRandBrand($brands)
     {
         $brand = $brands[rand(0, (count($brands) - 1))];
         $brand_input = $brand->find("css", "input");
+        if (!is_object($brand_input)) {
+            $this->exception_message .= "__! Check brands path !__";
+            throw new Exception($this->exception_message);
+        }
         $attr = array();
-        $attr['data-name'] = $brand_input->getAttribute("data-name");
-        $attr['data-url'] = $brand_input->getAttribute("data-url");
+        $br_data_name = $brand_input->getAttribute("data-name");
+        if ($br_data_name == null) {
+            $warn = "\e[35m__? Check brand data-name attribute ?__\n\e[0m";
+            $this->warning_message .= $warn;
+            $attr['data-name'] = "\e[35m__! Missing !__\n\e[0m";
+        } else
+            $attr['data-name'] = $br_data_name;
+
+        $br_data_url = $brand_input->getAttribute("data-url");
+        if ($br_data_url == null) {
+            $this->exception_message .= "<span class='exceptions'> __! Check brand data-url attribute !__ </span><br>\n";
+            throw new Exception($this->exception_message);
+        }
+        $attr['data-url'] = $br_data_url;
         $attr['url'] = $attr['data-url'] . "-modelleri/";
         return $attr;
     }
@@ -219,7 +260,13 @@ class FeatureContext extends MinkContext
     {
         $color = $colors[rand(0, (count($colors) - 1))];
         $attr = array();
-        $attr['name'] = $color->getAttribute("data-name");
+        $cl_data_name = $color->getAttribute("data-name");
+        if ($cl_data_name == null) {
+            $warn = "\e[35m__? Check data-name attribute of colors ?__\n\e[0m";
+            $this->warning_message .= $warn;
+            $attr['data-name'] = "\e[35m__! Missing !__ \e[0m";
+        } else
+            $attr['data-name'] = $cl_data_name;
         $attr['key'] = $color->getAttribute("data-key");
         $attr['url'] = $attr['key'] . "-renkli";
         return $attr;
@@ -234,7 +281,7 @@ class FeatureContext extends MinkContext
         $session = $this->getSession();
         $page = $session->getPage();
 
-        if (($algorithm_url = $this->setAlgorithm($alg)) == ($search = "http://vitringez.com/arama")) {
+        if (($algorithm_url = $this->setAlgorithm($alg)) == ($search = $this->base_url . 'arama')) {
             $err = "there is no sorting algorithm called \"" . $alg . "\" on the site\n";
             throw new Exception($err);
         }
@@ -269,7 +316,6 @@ class FeatureContext extends MinkContext
 
     private function setAlgorithm($alg)
     {
-        $base_url = "http://vitringez.com/";
         switch ($alg) {
             case "ascending":
                 $sort_url = "arama?sort=price|asc";
@@ -281,7 +327,7 @@ class FeatureContext extends MinkContext
                 $sort_url = "arama";
                 break;
         }
-        return $base_url . $sort_url;
+        return $this->base_url . $sort_url;
 
     }
 
@@ -357,7 +403,6 @@ class FeatureContext extends MinkContext
 
     private function setUrl($category)
     {
-        $base_url = "http://vitringez.com/";
         switch ($category) {
             case "kadın":
                 $data_url = "kadin";
@@ -376,7 +421,7 @@ class FeatureContext extends MinkContext
                 break;
 
         }
-        return $base_url . $data_url;
+        return $this->base_url . $data_url;
     }
 
     /**
@@ -436,7 +481,7 @@ class FeatureContext extends MinkContext
 
         $page->findById("newUserLink")->click();
 
-        $session->wait(3);
+        $session->wait(10);
 
         $registerRow = $page->findAll("css", "html.js body.layout1 div#simplemodal-container.simplemodal-container div.simplemodal-wrap
         div#simplemodal-data.modalContent div.registrationFormContainer form.fos_user_registration_register div.row");
@@ -462,7 +507,6 @@ class FeatureContext extends MinkContext
      */
     public function iWaitSecond($duration)
     {
-//        $this->getSession()->wait(intval($duration) * 1000, '(0 === jQuery.active)');
         $this->getSession()->wait(intval($duration) * 1000,
             '(0 === jQuery.active && 0 === jQuery(\':animated\').length)');
 
@@ -473,23 +517,7 @@ class FeatureContext extends MinkContext
     public function generateRandomEmail()
     {
         $characters = 'abcdefghijklmnopqrstuvwxyz';
-
-        $email = "bdd_" . $this->generateRandomString() . "@yahoo.com";
-
-        /*        $dom = $n = '';
-
-                do {
-                    $n = $dom = '';
-                    for ($i = 0; $i < rand(5, 15); $i++) {
-                        $n .= $characters[rand(0, strlen($characters) - 1)];
-                    }
-                    for ($i = 0; $i < rand(6, 12); $i++) {
-                        $dom .= $characters[rand(0, strlen($characters) - 1)];
-                    }
-                    $email = $n . "@" . $dom . ".com";
-                } while (filter_var($email, FILTER_VALIDATE_EMAIL));*/
-        return $email;
-
+        return 'bdd_' . $this->generateRandomString() . '@yahoo.com';
     }
 
     public function generateRandomString($length = 6)
