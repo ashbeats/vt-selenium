@@ -15,6 +15,7 @@ Feature: login feature
     When I press "_submit"
     And I wait "1" second
     Then I should see "Hesabım"
+    And I should not see "Nedeni bilinmeyen bir hata oluştu."
 
 
 
