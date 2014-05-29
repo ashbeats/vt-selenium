@@ -1,27 +1,33 @@
 <?php
-
 use Behat\MinkExtension\Context\MinkContext;
 
 class FeatureContext extends MinkContext
 {
+
     /**
      * @Then /^I mix some filter$/
      */
     public function iMixSomeFilter()
     {
         $base_url = "http://vitringez.com/";
+        $mail_message = '';
 
-        try {
+            try {
             $session = $this->getSession();
             $page = $session->getPage();
 
             echo "\e[31m===========\nGenel Site\n===========\n\e[0m";
+            $mail_message .= "<h1 style=\"color:#CB0C0C;\">Genel Site</h2><br>\n";
             $providers = $page->find("css", "#filterProvider > div > div > div")->findAll("css", "div");
             echo "Provider sayısı: <" . count($providers) . ">\n";
+            $mail_message .= "<div id='generalinfo'>\n<span>Provider sayısı: \"" . count($providers) . "\"</span><br>\n";
+
+
             $brands = $page->find('css', '#filterBrands > div > div > div')->findAll('css', 'div');
             echo "Brand sayısı: <" . count($brands) . ">\n";
             echo "Toplam ürün: <" . intval($this->getFilterProgressBar($page)) . ">\n\n";
-
+            $mail_message .= "<span> Brand sayısı: \"" . count($brands) . "\"</span><br>\n" .
+                "<span> Toplam ürün: \"" . intval($this->getFilterProgressBar($page)) . "\"</span><br>\n</div>\n";
 
             $colors = $page->find('css', '#filterColors > div > div > div > ul')
                 ->findAll('css', 'li');
@@ -31,9 +37,13 @@ class FeatureContext extends MinkContext
             $session->visit($base_url . $simple_color['url']);
 
             echo "\e[34m=============\nRenk Filtresi\n=============\n\e[0m";
+            $mail_message .= "\n<h2 id='colorfilter'>" . "Renk Filtresi" . "</h2>\n";
+
             echo "\"" . $simple_color['name'] . "\" seçili iken <" .
                 intval($this->getFilterProgressBar($page)) .
                 "> ürün var.\n";
+            $mail_message .= "<span>\"" . $simple_color['name'] . "\" seçili iken \"" .
+                intval($this->getFilterProgressBar($page)) . "\" ürün var.</span><br>\n";
 
             // more than one color
             $color1 = $this->getRandColor($colors);
@@ -46,6 +56,8 @@ class FeatureContext extends MinkContext
                 intval(
                     $this->getFilterProgressBar($page)
                 ) . "> ürün var.\n\n";
+            $mail_message .= "<span>\"" . $color1['name'] . "\" ve \"" . $color2['name'] . "\" seçili iken \"" .
+                intval($this->getFilterProgressBar($page)) . "\" ürün var.</span><br>\n\n";
 
             // price filter
             $color1 = $this->getRandColor($colors);
@@ -72,9 +84,16 @@ class FeatureContext extends MinkContext
             );
 
             echo "\e[35m==================\nRenk+Fiyat Filtresi\n==================\n\e[0m";
+            $mail_message .= "<h3 id='color+price'>" . "Renk+Fiyat Filtresi" . "</h3><br>\n";
+
+
             echo "\"" . $color1['name'] . "\" ve \"" . $color2['name'] . "\" seçili iken, [" .
                 $min_price . " - " . $max_price . "] fiyat aralığında: <" .
                 intval($this->getFilterProgressBar($page)) . "> ürün var.\n\n";
+            $mail_message .= "<span>\"" . $color1['name'] . "\" ve \"" . $color2['name'] . "\" seçili iken, [" .
+                $min_price . " - " . $max_price . "] fiyat aralığında: \"" .
+                intval($this->getFilterProgressBar($page)) . "\" ürün var.</span><br>\n\n";
+
 
             // brand
             $session->visit($base_url . "arama/");
@@ -83,17 +102,24 @@ class FeatureContext extends MinkContext
             $session->visit($base_url . $brand_attr['url']);
 
             echo "\e[36m==============\nMarka Filtresi\n==============\n\e[0m";
+            $mail_message .= "<h4 id='brandfilter'> Marka Filtresi </h4> ";
+
+
             echo "\"" . $brand_attr['data-name'] . "\" seçili iken: <" .
                 intval($this->getFilterProgressBar($page)) . "> ürün var.\n";
+
+            $mail_message .= "<span> \"" . $brand_attr['data-name'] . "\" seçili iken: \"" .
+                intval($this->getFilterProgressBar($page)) . "\" ürün var.</span><br>\n";
 
             // more than one brand
             $brand1 = $this->getRandBrand($brands);
             $brand2 = $this->getRandBrand($brands);
 
             $session->visit($base_url . $brand1['data-url'] . "-ve-" . $brand2['url']);
-            echo "\"" . $brand1['data-name'] . "\" ve " . "\"" . $brand2['data-name'] . "\" seçili iken: <" .
+            echo "\"" . $brand1['data-name'] . "\" ve \"" . $brand2['data-name'] . "\" seçili iken: <" .
                 intval($this->getFilterProgressBar($page)) . "> ürün var.\n";
-
+            $d = "<span>\"" . $brand1['data-name'] . "\" ve \"" . $brand2['data-name'] . "\" seçili iken \"" .
+                intval($this->getFilterProgressBar($page)) . "\" ürün var.</span><br>\n";
 
             // brand + provider
             $session->visit($base_url . "arama/");
@@ -111,19 +137,65 @@ class FeatureContext extends MinkContext
 
             echo "\"" . $brand_attr['data-name'] . "\" ile \"" . $fl_provider_name . "\" mağazası seçili iken <" .
                 intval($this->getFilterProgressBar($page)) . "> ürüm var.\n";
+            $mail_message .= "<span> \"".$brand_attr['data-name']."\" ile  \"".$fl_provider_name."\" mağazası seçili iken \"".
+                intval($this->getFilterProgressBar($page))."\" ürün var.</span><br>\n";
 
-        } catch (\Behat\Mink\Exception\Exception $e) {
+            echo $mail_message;
+
+//            $this->sendMail($mail_message);
+
+
+        } /*catch (\Behat\Mink\Exception\Exception $e) {
+            $mail_message .= "<br>\n" . $e->getMessage();
             echo $e->getMessage();
-            // sendMail 
+            $this->sendMail($mail_message);
+        }*/
+        catch(\Exception $ex){
+            echo "genel excep çalştı\n";
+        }
+        catch(\Behat\Mink\Exception\Exception $e2)
+        {
+            echo "e2 çalıştı \n";
+        }
+        catch(\Behat\Behat\Exception\Exception $e5){
+            echo "e5 çalıştı \n";
+        }
+        catch(\Symfony\Component\Config\Definition\Exception\Exception $e3)
+        {
+            echo "e3 çalıştı \n";
         }
 
+        catch(\WebDriver\Exception $e4){
+            echo "e4 çalıştı \n";
 
-        $this->sendMail();
+        }
     }
 
-    private function sendMail()
+    private function sendMail($message)
     {
-        // PHPMailer
+        /**
+         * You have to setup PHPMailer to use this method
+         * https://github.com/PHPMailer/PHPMailer
+         */
+        $mail = new PHPMailer;
+        $mail->isSMTP();
+        $mail->SMTPDebug = 1;
+        $mail->SMTPAuth = true;
+        $mail->SMTPSecure = 'ssl';
+        $mail->addAddress('report@example.com', 'Receiver Name');
+        $mail->WordWrap = 50;
+
+        $mail->isHTML(true);
+
+        $mail->Subject = 'BDD test report';
+        $mail->Body = $message;
+
+        if (!$mail->send()) {
+            echo "Message could not be sent.\n";
+            echo 'Mailer Error: ' . $mail->ErrorInfo . "\n";
+        } else {
+            echo 'Message has been sent';
+        }
     }
 
     private function getFilterProgressBar($page)
