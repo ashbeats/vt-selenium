@@ -205,6 +205,7 @@ class FeatureContext extends MinkContext
 
             $session->visit($this->base_url . $brand_attr['url'] . $fl_provider_url);
 
+
             echo "\"" . $brand_attr['data-name'] . "\" ile \"" . $fl_provider_name . "\" mağazası seçili iken <" .
                 intval($this->getFilterProgressBar($page)) . "> ürüm var.\n";
             $mail_message .= "<span> \"" . $brand_attr['data-name'] . "\" ile  \"" . $fl_provider_name . "\" mağazası seçili iken \"" .
@@ -484,16 +485,15 @@ DOC;
             case "erkek":
                 $data_url = "erkek";
                 break;
-            case "çocuk";
+            case "çocuk":
                 $data_url = "cocuk";
                 break;
-            case "ev";
+            case "ev":
                 $data_url = "ev";
                 break;
-            case "all";
-                $data_url = "arama";
+            default:
+                $data_url = 'arama';
                 break;
-
         }
         return $this->base_url . $data_url;
     }
@@ -565,7 +565,7 @@ DOC;
             $this->sendMail($mail_message);
 
         } catch (Exception $e) {
-            if ($e->getMessage() != $this->exception_message)
+            if (($e->getMessage()) != $this->exception_message)
                 $this->exception_message .= "\n<span class='generated_exception'> $e->getMessage() </span>";
             $this->sendMail($mail_message);
 
