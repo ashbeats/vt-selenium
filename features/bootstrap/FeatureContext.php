@@ -197,23 +197,23 @@ class FeatureContext extends MinkContext
                     if (!is_object($provider_input))
                         $this->setException('providerInput');
 
-                    if (!($provider_input->hasAttribute('data-url')))
+                    if (!($provider_input->hasAttribute("data-url")))
                         $this->setException('providerInput_data-url');
                     $fl_provider_url = $provider_input->getAttribute("data-url") . "-magazasi";
 
-                    if (!($provider_input->hasAttribute('data-name')))
+                    if (!($provider_input->hasAttribute("data-name")))
                         $this->setException('providerInput_data-name');
                     $fl_provider_name = $provider_input->getAttribute("data-name");
                     break;
                 }
             }
 
-/*            for ($i = 0; $i < count($providers); $i++) {
-                if (intval(str_replace("(", "", ($providers[$i]->find('css', 'span')->getText())))) {
-                    $fl_provider_url = $providers[$i]->find('css', 'input')->getAttribute("data-url") . "-magazasi";
-                    $fl_provider_name = $providers[$i]->find('css', 'input')->getAttribute("data-name");
-                }
-            }*/
+            /*            for ($i = 0; $i < count($providers); $i++) {
+                            if (intval(str_replace("(", "", ($providers[$i]->find('css', 'span')->getText())))) {
+                                $fl_provider_url = $providers[$i]->find('css', 'input')->getAttribute("data-url") . "-magazasi";
+                                $fl_provider_name = $providers[$i]->find('css', 'input')->getAttribute("data-name");
+                            }
+                        }*/
 
             $session->visit($this->base_url . $brand_attr['url'] . $fl_provider_url);
 
@@ -421,16 +421,28 @@ DOC;
      */
     public function iFillProfileDetails()
     {
-        $session = $this->getSession();
-        $page = $session->getPage();
+        $mail_message = "<strong class='test_feature'> Profile Detail Feature </strong> ";
+        $this->mailSubject = 'ProfileDetails Report_'.$this->now->getTimestamp();
+        try {
+            $session = $this->getSession();
+            $page = $session->getPage();
 
-        $page->find('css', '#vitringez_user_profile_form_biography')
-            ->setValue($this->generateRandomString(16));
-        $page->find('css', '#vitringez_user_profile_form_city')
-            ->setValue($this->generateRandomString(7));
+            $page->find('css', '#vitringez_user_profile_form_biography')
+                ->setValue($this->generateRandomString(16));
+            $page->find('css', '#vitringez_user_profile_form_city')
+                ->setValue($this->generateRandomString(7));
 
-        $page->find('xpath', '//*[@id="vitringez_user_profile_form_newsletterSubscribe"]')
-            ->uncheck();
+            $page->find('xpath', '//*[@id="vitringez_user_profile_form_newsletterSubscribe"]')
+                ->uncheck();
+
+            $mail_message.="\n<p>profile details test ok</p>";
+            $this->sendMail($mail_message);
+        } catch (Exception $e) {
+            if (($e->getMessage()) != $this->exception_message)
+                $this->exception_message .= "\n<span class='generated_exception'> $e->getMessage() </span>";
+            $this->sendMail($mail_message);
+            throw new Exception($this->exception_message);
+        }
     }
 
     /**
@@ -528,10 +540,10 @@ DOC;
     /**
      * @When /^I set the fashion alert$/
      */
-    public function iSetTheFashionAlert() // mouseOver broken
+    public function iSetTheFashionAlert() //ok
     {
         $mail_message = "<strong class='test_feature'> Fashiın Akert </strong> ";
-        $this->mailSubject = 'FashionnAlert Report';
+        $this->mailSubject = 'FashionnAlert Report_' . $this->now->getTimestamp();
         try {
             $session = $this->getSession();
             $page = $session->getPage();
@@ -540,10 +552,8 @@ DOC;
             if (!is_object($first_product))
                 $this->setException('firstProduct');
 
-            if (!$first_product->hasAttribute('data-uri')) {
-                $this->exception_message .= "<span class='exception'> __! First product has no data-uri attribute !__ </span>";
-                throw new Exception($this->exception_message);
-            }
+            if (!$first_product->hasAttribute('data-uri'))
+                $this->setException('firstProduct_data-uri');
             $session->visit($first_product->getAttribute('data-uri'));
 
             $alertbutton = $page->find("xpath", '//*[@id="content"]/div[1]/div/div[2]/a[1]');
@@ -569,11 +579,11 @@ DOC;
             if (($e->getMessage()) != $this->exception_message)
                 $this->exception_message .= "\n<span class='generated_exception'> $e->getMessage() </span>";
             $this->sendMail($mail_message);
-
+            throw new Exception($this->exception_message);
         }
     }
 
-    private function setTime()
+    private function setTime() //ok
     {
         $this->now = new DateTime();
         $this->now->setTimezone(new DateTimeZone('Europe/Istanbul'));
@@ -582,7 +592,7 @@ DOC;
     /**
      * @When /^I fill in registration form$/
      */
-    public function iFillInRegistrationForm()
+    public function iFillInRegistrationForm() //ok
     {
         $mail_message = "<strong class='test_feature' style='color: #990000; font-style: oblique'> Register Test </strong>";
         $this->mailSubject = 'Register Feature Report_' . $this->now->getTimestamp();
@@ -631,7 +641,7 @@ DOC;
             $this->sendMail($mail_message);
 
         } catch (Exception $e) {
-            if (($e->getMessage()) != $this->exception_message)
+            if ($e->getMessage() != $this->exception_message)
                 $this->exception_message .= "\n<span class='generated_exception'> {$e->getMessage()} </span>";
             $this->sendMail($mail_message);
             throw new Exception($this->exception_message);
