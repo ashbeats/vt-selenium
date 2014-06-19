@@ -1,5 +1,6 @@
 BDD Mink features to testing behaviors of **vitringez.com**
 ------------------------------------------------------------
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/muhasturk/Mink/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/muhasturk/Mink/?branch=master)
 
 First you have to execute selenium driver:
 
