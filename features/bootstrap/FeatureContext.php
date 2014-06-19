@@ -52,24 +52,22 @@ class FeatureContext extends MinkContext
             $mail_message .= "<h1 style=\"color:#CB0C0C;\">Genel Site</h2><br>\n";
 
             $providers_container = $page->find("css", "#filterProvider > div > div > div");
-            if (!is_object($providers_container)) {
-                $this->exception_message .= "<span class='exception'>__! Check providers container path !__\n</span>";
-                throw new Exception($this->exception_message);
-            }
+            if (!is_object($providers_container))
+                $this->setException('providers_container');
+
+
             $providers = $providers_container->findAll("css", "div");
-            if (count($providers) == 0) {
-                $this->exception_message .= "<span class='exception'>__! Check providers path. Maybe it has changed !__\n</span>";
-                throw new Exception($this->exception_message);
-            }
+            if (count($providers) == 0)
+                $this->setException('providers');
+
             $total_providers = count($providers);
             echo "Provider sayısı: <" . $total_providers . ">\n";
             $mail_message .= "<div id='generalinfo'>\n<span>Provider sayısı: \"" . $total_providers . "\"</span><br>\n";
 
             $brands_container = $page->find('css', '#filterBrands > div > div > div');
-            if (!is_object($brands_container)) {
-                $this->exception_message .= "<span class='exception'>__! Check brand container path !__\n</span>";
-                throw new Exception($this->exception_message);
-            }
+            if (!is_object($brands_container))
+                $this->setException('brand_container');
+
             $brands = $brands_container->findAll('css', 'div');
             $total_brand = count($brands);
             if ($total_brand == 0) {
@@ -83,34 +81,31 @@ class FeatureContext extends MinkContext
                 $this->exception_message .= "<span class='exception'>__! There is no product on site !__\n</span>";
                 throw new Exception($this->exception_message);
             }
-            echo "Toplam ürün: <" . $total_product . ">\n\n";
+            echo "Toplam ürün: <$total_product> \n\n";
 
-            $mail_message .= "<span> Brand sayısı: \"" . $total_brand . "\"</span><br>\n" .
-                "<span> Toplam ürün: \"" . $total_product . "\"</span><br>\n</div>\n";
+            $mail_message .= "<span> Brand sayısı:  '$total_brand' </span><br>\n
+                <span> Toplam ürün:  '$total_product' </span><br>\n</div>\n";
 
             $colors_container = $page->find('css', '#filterColors > div > div > div > ul');
-            if (!is_object($colors_container)) {
-                $this->exception_message .= "<span class='exception'>__! Check colors container path !__\n</span>";
-                throw new Exception($this->exception_message);
-            }
+            if (!is_object($colors_container))
+                $this->setException('color_container');
             $colors = $colors_container->findAll('css', 'li');
             if (count($colors) == 0) {
                 $this->exception_message .= "<span class='exception'>__! There is no color on site or check path !__\n</span>";
                 throw new Exception($this->exception_message);
             }
-
             // one color
             $acolor = $this->getRandColor($colors);
             $session->visit($this->base_url . $acolor['url']);
 
             echo "\e[34m=============\nRenk Filtresi\n=============\n\e[0m";
-            $mail_message .= "\n<h2 id='colorfilter'>" . "Renk Filtresi" . "</h2>\n";
+            $mail_message .= "\n<h2 id='colorfilter'> Renk Filtresi </h2>\n";
 
-            echo "\"" . $acolor['data-name'] . "\" seçili iken <" .
-                intval($this->getFilterProgressBar($page)) .
+            echo "'{$acolor['data-name']}' seçili iken <".
+                intval($this->getFilterProgressBar($page)).
                 "> ürün var.\n";
-            $mail_message .= "<span>\"" . $acolor['data-name'] . "\" seçili iken \"" .
-                intval($this->getFilterProgressBar($page)) . "\" ürün var.</span>\n";
+            $mail_message .= "<span> '{$acolor['data-name']}' seçili iken '".
+                intval($this->getFilterProgressBar($page))."' ürün var.</span>\n";
 
             // more than one color
             $color1 = $this->getRandColor($colors);
@@ -218,16 +213,12 @@ class FeatureContext extends MinkContext
 
             // Final
 
-            echo "\n" . $mail_message . "\n";
-
             $this->sendMail($mail_message);
-
 
         } catch (Exception $e) {
             if ($e->getMessage() != $this->exception_message)
                 $this->exception_message .= $e->getMessage();
             $this->sendMail($mail_message);
-
             throw new Exception($e->getMessage());
         }
     }
@@ -302,12 +293,9 @@ DOC;
     private function getFilterProgressBar($page)
     {
         $progressBar = $page->findById("filterProgressBar");
-        if (!is_object($progressBar)) {
-            $this->exception_message .= "<span class='exception'>__! Check filterProgressBar id or path !__</span>\n";
-            throw new Exception($this->exception_message);
-        }
+        if (!is_object($progressBar))
+            $this->setException('filterProgressBar');
         return $progressBar->getText();
-
     }
 
     private function getRandBrand($brands)
@@ -652,7 +640,7 @@ DOC;
 
     private function setException($obj)
     {
-        $this->exception_message .= "<span class='exception'> __! Check $obj path !__ </span>";
+        $this->exception_message .= "<span class='exception'> __! Check '$obj' path | id | label  !__ </span>";
         throw new Exception($this->exception_message);
     }
 
