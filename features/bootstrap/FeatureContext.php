@@ -101,21 +101,21 @@ class FeatureContext extends MinkContext
             echo "\e[34m=============\nRenk Filtresi\n=============\n\e[0m";
             $mail_message .= "\n<h2 id='colorfilter'> Renk Filtresi </h2>\n";
 
-            echo "'{$acolor['data-name']}' seçili iken <".
-                intval($this->getFilterProgressBar($page)).
-                "> ürün var.\n";
-            $mail_message .= "<span> '{$acolor['data-name']}' seçili iken '".
-                intval($this->getFilterProgressBar($page))."' ürün var.</span>\n";
+            $product = intval($this->getFilterProgressBar($page));
+            echo "'{$acolor['data-name']}' seçili iken <$product> ürün var.\n";
+            $mail_message .= "<span> '{$acolor['data-name']}' seçili iken '$product' ürün var.</span>\n";
 
             // more than one color
             $color1 = $this->getRandColor($colors);
             $color2 = $this->getRandColor($colors);
             $session->visit($this->base_url . $color1['data-key'] . "-ve-" . $color2['data-key'] . "-renkli");
 
+            $product = intval(($this->getFilterProgressBar($page)));
+
             echo "\"" . $color1['data-name'] . "\" ve \"" . $color2['data-name'] . "\" seçili iken <" .
-                intval($this->getFilterProgressBar($page)) . "> ürün var.\n\n";
+                $product . "> ürün var.\n\n";
             $mail_message .= "<span>\"" . $color1['data-name'] . "\" ve \"" . $color2['data-name'] . "\" seçili iken \"" .
-                intval($this->getFilterProgressBar($page)) . "\" ürün var.</span><br>\n\n";
+                $product . "\" ürün var.</span><br>\n\n";
 
             // price filter
             $color1 = $this->getRandColor($colors);
@@ -123,96 +123,105 @@ class FeatureContext extends MinkContext
             $session->visit($this->base_url . $color1['data-key'] . "-ve-" . $color2['data-key'] . "-renkli");
 
             $range_div = $page->find('css', '#filterPrice > div > div.range-slider-input');
-            if (!is_object($range_div)) {
-                $this->exception_message .= "<span class='exception'> __! Check price range div path !__ </span>\n";
-                throw new Exception($this->exception_message);
-            }
+            if (!is_object($range_div))
+                $this->setException('rangeDiv');
             $range_inputs = $range_div->findAll('css', 'input');
-            if (count($range_inputs) == 0) {
-                $this->exception_message .= "<span class='exception'>__! Check range input path !__ </span>\n";
-                throw new Exception($this->exception_message);
-            }
+            if (count($range_inputs) == 0)
+                $this->setException('randeInputs');
 
+            if (!$range_inputs[0]->hasAttribute('value'))
+                $this->setException('ranndeMin');
             $range_min = $range_inputs[0]->getAttribute('value');
-            if (is_null($range_min)) {
-                $this->exception_message .= "<span class='exception'>__! Check minrange attribute !__ </span>\n";
-                throw new Exception($this->exception_message);
-            }
+            if (!$range_inputs[1]->hasAttribute('value'))
+                $this->setException('rangeMax');
             $range_max = $range_inputs[1]->getAttribute('value');
-            if (is_null($range_max)) {
-                $this->exception_message .= "<span class='exception'>__! Check maxrange attribute !__ </span>\n";
-                throw new Exception($this->exception_message);
-            }
 
             $min_price = rand($range_min, $range_max);
             $max_price = rand($min_price, $range_max);
-
-            $criteria_url = '?criteria%5Bfacet_price%5D=%5B' .
-                $min_price . '+TO+' .
-                $max_price . '%5D';
+            $criteria_url = '?criteria%5Bfacet_price%5D=%5B' . $min_price . '+TO+' . $max_price . '%5D';
 
             $session->visit($this->base_url . $color1['data-key'] . "-ve-" . $color2['data-key'] . "-renkli" . $criteria_url);
 
             echo "\e[35m==================\nRenk+Fiyat Filtresi\n==================\n\e[0m";
             $mail_message .= "<h3 id='color+price'> Renk+Fiyat Filtresi  </h3>\n";
 
-
+            $product = intval($this->getFilterProgressBar($page));
             echo "\"" . $color1['data-name'] . "\" ve \"" . $color2['data-name'] . "\" seçili iken, [" .
                 $min_price . " - " . $max_price . "] fiyat aralığında: <" .
-                intval($this->getFilterProgressBar($page)) . "> ürün var.\n\n";
+                $product . "> ürün var.\n\n";
             $mail_message .= "<span>\"" . $color1['data-name'] . "\" ve \"" . $color2['data-name'] . "\" seçili iken, [" .
                 $min_price . " - " . $max_price . "] fiyat aralığında: \"" .
-                intval($this->getFilterProgressBar($page)) . "\" ürün var.</span><br>\n\n";
-
+                $product . "\" ürün var.</span><br>\n\n";
 
             // brand
             $session->visit($this->base_url . "arama/");
-
             $brand_attr = $this->getRandBrand($brands);
             $session->visit($this->base_url . $brand_attr['url']);
 
             echo "\e[36m==============\nMarka Filtresi\n==============\n\e[0m";
             $mail_message .= "<h4 id='brandfilter'> Marka Filtresi </h4> ";
 
-
-            echo "\"" . $brand_attr['data-name'] . "\" seçili iken: <" .
-                intval($this->getFilterProgressBar($page)) . "> ürün var.\n";
-
-            $mail_message .= "<span> \"" . $brand_attr['data-name'] . "\" seçili iken: \"" .
-                intval($this->getFilterProgressBar($page)) . "\" ürün var.</span><br>\n";
+            $product = intval($this->getFilterProgressBar($page));
+            echo "\"" . $brand_attr['data-name'] . "\" seçili iken: <$product> ürün var.\n";
+            $mail_message .= "<span> '{$brand_attr['data-name']}' seçili iken: '$product' ürün var.</span><br>\n";
 
             // more than one brand
             $brand1 = $this->getRandBrand($brands);
             $brand2 = $this->getRandBrand($brands);
 
             $session->visit($this->base_url . $brand1['data-url'] . "-ve-" . $brand2['url']);
+            $product = intval($this->getFilterProgressBar($page));
             echo "\"" . $brand1['data-name'] . "\" ve \"" . $brand2['data-name'] . "\" seçili iken: <" .
-                intval($this->getFilterProgressBar($page)) . "> ürün var.\n";
+                $product . "> ürün var.\n";
             $mail_message .= "<span>\"" . $brand1['data-name'] . "\" ve \"" . $brand2['data-name'] . "\" seçili iken \"" .
-                intval($this->getFilterProgressBar($page)) . "\" ürün var.</span><br>\n";
+                $product . "\" ürün var.</span><br>\n";
 
             // brand + provider
             $session->visit($this->base_url . "arama/");
             $brand_attr = $this->getRandBrand($brands);
-            $providers = $page->find("css", "#filterProvider > div > div > div")->findAll("css", "div");
+            $prov_cont = $page->find("css", "#filterProvider > div > div > div");
+            if (!is_object($prov_cont))
+                $this->setException('providerContainer');
+            $providers = $prov_cont->findAll("css", "div");
+            if (count($providers) == 0)
+                $this->setException('providers');
 
+//            $fl_provider_name = $fl_provider_url = '';
             for ($i = 0; $i < count($providers); $i++) {
+                $provider_span = $providers[$i]->find('css', 'span');
+                if (!is_object($provider_span))
+                    $this->setException('providerSpan');
+
+                if (intval(str_replace("(", "", ($provider_span->getText())))) { // higher zero
+                    $provider_input = $providers[$i]->find('css', 'input');
+                    if (!is_object($provider_input))
+                        $this->setException('providerInput');
+
+                    if (!($provider_input->hasAttribute('data-url')))
+                        $this->setException('providerInput_data-url');
+                    $fl_provider_url = $provider_input->getAttribute("data-url") . "-magazasi";
+
+                    if (!($provider_input->hasAttribute('data-name')))
+                        $this->setException('providerInput_data-name');
+                    $fl_provider_name = $provider_input->getAttribute("data-name");
+                    break;
+                }
+            }
+
+/*            for ($i = 0; $i < count($providers); $i++) {
                 if (intval(str_replace("(", "", ($providers[$i]->find('css', 'span')->getText())))) {
                     $fl_provider_url = $providers[$i]->find('css', 'input')->getAttribute("data-url") . "-magazasi";
                     $fl_provider_name = $providers[$i]->find('css', 'input')->getAttribute("data-name");
                 }
-            }
+            }*/
 
             $session->visit($this->base_url . $brand_attr['url'] . $fl_provider_url);
 
-
+            $product = intval($this->getFilterProgressBar($page));
             echo "\"" . $brand_attr['data-name'] . "\" ile \"" . $fl_provider_name . "\" mağazası seçili iken <" .
-                intval($this->getFilterProgressBar($page)) . "> ürüm var.\n";
+                $product . "> ürüm var.\n";
             $mail_message .= "<span> \"" . $brand_attr['data-name'] . "\" ile  \"" . $fl_provider_name . "\" mağazası seçili iken \"" .
-                intval($this->getFilterProgressBar($page)) . "\" ürün var.</span><br>\n";
-
-
-            // Final
+                $product . "\" ürün var.</span><br>\n";
 
             $this->sendMail($mail_message);
 
@@ -241,7 +250,7 @@ class FeatureContext extends MinkContext
         $mail->SMTPAuth = true;
         $mail->SMTPSecure = 'ssl';
         $mail->FromName = 'Mustafa Hasturk';
-        $mail->addAddress('tglet@tryalert.com', 'muhasturk');
+        $mail->addAddress('tzzzf@droplar.com', 'muhasturk');
         $mail->WordWrap = 50;
         $mail->isHTML(true);
         $mail->Subject = $this->mailSubject;
@@ -528,10 +537,8 @@ DOC;
             $page = $session->getPage();
 
             $first_product = $page->find('xpath', '//*[@id="catalogResult"]/div/div/div[3]');
-            if (!is_object($first_product)) {
-                $this->exception_message .= "<span class='exception'> __! Check first product path !__ </span>";
-                throw new Exception($this->exception_message);
-            }
+            if (!is_object($first_product))
+                $this->setException('firstProduct');
 
             if (!$first_product->hasAttribute('data-uri')) {
                 $this->exception_message .= "<span class='exception'> __! First product has no data-uri attribute !__ </span>";
@@ -540,25 +547,19 @@ DOC;
             $session->visit($first_product->getAttribute('data-uri'));
 
             $alertbutton = $page->find("xpath", '//*[@id="content"]/div[1]/div/div[2]/a[1]');
-            if (!is_object($alertbutton)) {
-                $this->exception_message .= "<span class='exception'> __! Check alertbutton path !__ </span>";
-                throw new Exception($this->exception_message);
-            }
+            if (!is_object($alertbutton))
+                $this->setException('alertButtonn');
             $alertbutton->click();
 
             for ($i = 1; $i <= 3; $i++) {
                 $alertLabel = $page->find("xpath", '//*[@id="simplemodal-data"]/form/div/label[' . $i . ']/input');
-                if (!is_object($alertLabel)) {
-                    $this->exception_message .= "<span class='exception'> __! Check alertLabel path !__ </span>";
-                    throw new Exception($this->exception_message);
-                }
+                if (!is_object($alertLabel))
+                    $this->setException('alertLabel');
                 $alertLabel->check();
             }
             $alertInput = $page->find("xpath", '//*[@id="simplemodal-data"]/form/input[1]');
-            if (!is_object($alertInput)) {
-                $this->exception_message .= "<span class='exception'> __! Check alertInput path !__ </span>";
-                throw new Exception($this->exception_message);
-            }
+            if (!is_object($alertInput))
+                $this->setException('alertInput');
             $alertInput->click(); // send fashion alert request
 
             $mail_message .= "<p> 'FashionAlert' set successfully </p>";
@@ -640,7 +641,7 @@ DOC;
 
     private function setException($obj)
     {
-        $this->exception_message .= "<span class='exception'> __! Check '$obj' path | id | label  !__ </span>";
+        $this->exception_message .= "<span class='exception'> __! Check '$obj' path | id | attribute !__ </span>";
         throw new Exception($this->exception_message);
     }
 
