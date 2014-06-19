@@ -1,7 +1,7 @@
 <?php
 /**
  * @author Mustafa Hasturk
- * @author http://github.com/muhasturk
+ * @site http://github.com/muhasturk
  *
  */
 use Behat\MinkExtension\Context\MinkContext;
@@ -11,7 +11,7 @@ class FeatureContext extends MinkContext
     public $base_url = "http://vitringez.com/";
 
     /**
-     * Related time variable
+     * related time
      * Generated with setTime methof after construct has been run
      */
     protected $now;
@@ -29,7 +29,8 @@ class FeatureContext extends MinkContext
 
     public $mailSubject = '';
 
-    function __construct(){
+    function __construct()
+    {
         $this->setTime();
     }
 
@@ -41,7 +42,7 @@ class FeatureContext extends MinkContext
     {
 
         $mail_message = '';
-        $this->mailSubject = 'MixFuture Report';
+        $this->mailSubject = 'MixFuture Report_' . $this->now->getTimestamp();
 
         try {
             $session = $this->getSession();
@@ -261,7 +262,7 @@ class FeatureContext extends MinkContext
             </head>
             <body>
                 <header>
-                    {$this->now->format('Y-m-d H:i:s')}
+                    <p> generated on {$this->now->format('Y-m-d H:i:s')} </p>
                 </header>
 
                 <div id='container'>
@@ -583,7 +584,8 @@ DOC;
         }
     }
 
-    private function setTime(){
+    private function setTime()
+    {
         $this->now = new DateTime();
         $this->now->setTimezone(new DateTimeZone('Europe/Istanbul'));
     }
@@ -594,7 +596,7 @@ DOC;
     public function iFillInRegistrationForm()
     {
         $mail_message = "<strong class='test_feature' style='color: #990000; font-style: oblique'> Register Test </strong>";
-        $this->mailSubject = 'Register Feature Report_'. $this->now->getTimestamp();
+        $this->mailSubject = 'Register Feature Report_' . $this->now->getTimestamp();
 
         try {
             $session = $this->getSession();
@@ -602,27 +604,21 @@ DOC;
             $page = $session->getPage();
 
             $newUserLink = $page->findById("newUserLink");
-            if (!is_object($newUserLink)) {
+            if (!is_object($newUserLink))
                 $this->setException('newUserLink');
-            }
 
             $newUserLink->click();
             $session->wait(5000);
 
             $registerRow = $page->findAll("css", "div.row");
-            if (count($registerRow) == 0) {
-                $this->exception_message .= "<span class'exception'> __! Check registerRow path !__ </span>";
-                throw new Exception($this->exception_message);
-            }
+            if (count($registerRow) == 0)
+                $this->setException('registerRow');
 
             $divRows = [];
-
             for ($i = 0; $i < count($registerRow); $i++) {
                 $divRow = $registerRow[$i]->find("css", "input");
-                if (!is_object($divRow)) {
-                    $this->exception_message .= "<span class'exception'> __! Check registerRow input path !__ </span>";
-                    throw new Exception($this->exception_message);
-                }
+                if (!is_object($divRow))
+                    $this->setException('divRow');
                 $divRows[] = $divRow;
             }
             $divRows[0]->setValue($this->generateRandomString(rand(3, 12)));
@@ -633,32 +629,29 @@ DOC;
             $divRows[4]->setValue($password);
             $divRows[5]->setValue($password);
             $userAgreement = $divRows[6]->find("css", "input");
-            if (!is_object($userAgreement)) {
-                $this->exception_message .= "<span class='exception'>__! Check userAgreement path !__ </span>";
-                throw new Exception($this->exception_message);
-            }
+            if (!is_object($userAgreement))
+                $this->setException('userAgreement');
             $userAgreement->check();
 
             $submitForm = $divRows[7]->find("css", "input");
-            if (!is_object($submitForm)) {
-                $this->exception_message .= "<span class='exception'>__! Check submitForm path !__ </span>";
-                throw new Exception($this->exception_message);
-            }
+            if (!is_object($submitForm))
+                $this->setException('submitForm');
             $submitForm->click();
 
-            $mail_message .= "\n<p>Başarılı bir şekilde üye olundu.</p>";
+            $mail_message .= "\n<mark class='ok'>Başarılı bir şekilde üye olundu.</mark>";
             $this->sendMail($mail_message);
 
         } catch (Exception $e) {
-            if ($e->getMessage() != $this->exception_message)
+            if (($e->getMessage()) != $this->exception_message)
                 $this->exception_message .= "\n<span class='generated_exception'> {$e->getMessage()} </span>";
-
             $this->sendMail($mail_message);
+            throw new Exception($this->exception_message);
         }
 
     }
 
-    private function setException($obj){
+    private function setException($obj)
+    {
         $this->exception_message .= "<span class='exception'> __! Check $obj path !__ </span>";
         throw new Exception($this->exception_message);
     }
