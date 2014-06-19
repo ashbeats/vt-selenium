@@ -1,11 +1,37 @@
 <?php
+/**
+ * @author Mustafa Hasturk
+ * @author http://github.com/muhasturk
+ *
+ */
 use Behat\MinkExtension\Context\MinkContext;
 
 class FeatureContext extends MinkContext
 {
-    public $exception_message = '';
-    public $warning_message = '';
     public $base_url = "http://vitringez.com/";
+
+    /**
+     * Related time variable
+     * Generated with setTime methof after construct has been run
+     */
+    protected $now;
+
+    /**
+     * Will be used as exception
+     * @type string
+     */
+    public $exception_message = '';
+    /**
+     * Will be used as warninng
+     * @type string
+     */
+    public $warning_message = '';
+
+    public $mailSubject = '';
+
+    function __construct(){
+        $this->setTime();
+    }
 
 
     /**
@@ -13,7 +39,9 @@ class FeatureContext extends MinkContext
      */
     public function iMixSomeFilter()
     {
+
         $mail_message = '';
+        $this->mailSubject = 'MixFuture Report';
 
         try {
             $session = $this->getSession();
@@ -24,12 +52,12 @@ class FeatureContext extends MinkContext
 
             $providers_container = $page->find("css", "#filterProvider > div > div > div");
             if (!is_object($providers_container)) {
-                $this->exception_message .= "__! Check providers container path !__\n";
+                $this->exception_message .= "<span class='exception'>__! Check providers container path !__\n</span>";
                 throw new Exception($this->exception_message);
             }
             $providers = $providers_container->findAll("css", "div");
             if (count($providers) == 0) {
-                $this->exception_message .= "__! Check providers path. Maybe it has changed !__\n";
+                $this->exception_message .= "<span class='exception'>__! Check providers path. Maybe it has changed !__\n</span>";
                 throw new Exception($this->exception_message);
             }
             $total_providers = count($providers);
@@ -38,20 +66,20 @@ class FeatureContext extends MinkContext
 
             $brands_container = $page->find('css', '#filterBrands > div > div > div');
             if (!is_object($brands_container)) {
-                $this->exception_message = "__! Check brand container path !__";
+                $this->exception_message .= "<span class='exception'>__! Check brand container path !__\n</span>";
                 throw new Exception($this->exception_message);
             }
             $brands = $brands_container->findAll('css', 'div');
             $total_brand = count($brands);
             if ($total_brand == 0) {
-                $this->exception_message = "__! Check brands path or there is no brand on site !__";
+                $this->exception_message .= "<span class='exception'>__! Check brands path or there is no brand on site !__\n</span>";
                 throw new Exception($this->exception_message);
             }
             echo "Brand sayısı: <" . $total_brand . ">\n";
 
             $total_product = intval($this->getFilterProgressBar($page));
             if ($total_product == 0) {
-                $this->exception_message = "__! There is no product on site !__";
+                $this->exception_message .= "<span class='exception'>__! There is no product on site !__\n</span>";
                 throw new Exception($this->exception_message);
             }
             echo "Toplam ürün: <" . $total_product . ">\n\n";
@@ -61,54 +89,64 @@ class FeatureContext extends MinkContext
 
             $colors_container = $page->find('css', '#filterColors > div > div > div > ul');
             if (!is_object($colors_container)) {
-                $this->exception_message = "__! Check colors container path !__";
+                $this->exception_message .= "<span class='exception'>__! Check colors container path !__\n</span>";
                 throw new Exception($this->exception_message);
             }
             $colors = $colors_container->findAll('css', 'li');
             if (count($colors) == 0) {
-                $this->exception_message = "__! There is no color on site or check path !__";
+                $this->exception_message .= "<span class='exception'>__! There is no color on site or check path !__\n</span>";
                 throw new Exception($this->exception_message);
             }
 
             // one color
-            $simple_color = $this->getRandColor($colors);
-            $session->visit($this->base_url . $simple_color['url']);
+            $acolor = $this->getRandColor($colors);
+            $session->visit($this->base_url . $acolor['url']);
 
             echo "\e[34m=============\nRenk Filtresi\n=============\n\e[0m";
             $mail_message .= "\n<h2 id='colorfilter'>" . "Renk Filtresi" . "</h2>\n";
 
-            echo "\"" . $simple_color['data-name'] . "\" seçili iken <" .
+            echo "\"" . $acolor['data-name'] . "\" seçili iken <" .
                 intval($this->getFilterProgressBar($page)) .
                 "> ürün var.\n";
-            $mail_message .= "<span>\"" . $simple_color['data-name'] . "\" seçili iken \"" .
-                intval($this->getFilterProgressBar($page)) . "\" ürün var.</span><br>\n";
+            $mail_message .= "<span>\"" . $acolor['data-name'] . "\" seçili iken \"" .
+                intval($this->getFilterProgressBar($page)) . "\" ürün var.</span>\n";
 
             // more than one color
             $color1 = $this->getRandColor($colors);
             $color2 = $this->getRandColor($colors);
-            $session->visit(
-                $this->base_url . $color1['key'] . "-ve-" . $color2['key'] . "-renkli"
-            );
+            $session->visit($this->base_url . $color1['data-key'] . "-ve-" . $color2['data-key'] . "-renkli");
 
             echo "\"" . $color1['data-name'] . "\" ve \"" . $color2['data-name'] . "\" seçili iken <" .
-                intval(
-                    $this->getFilterProgressBar($page)
-                ) . "> ürün var.\n\n";
+                intval($this->getFilterProgressBar($page)) . "> ürün var.\n\n";
             $mail_message .= "<span>\"" . $color1['data-name'] . "\" ve \"" . $color2['data-name'] . "\" seçili iken \"" .
                 intval($this->getFilterProgressBar($page)) . "\" ürün var.</span><br>\n\n";
 
             // price filter
             $color1 = $this->getRandColor($colors);
             $color2 = $this->getRandColor($colors);
-            $session->visit(
-                $this->base_url . $color1['key'] . "-ve-" . $color2['key'] . "-renkli"
-            );
+            $session->visit($this->base_url . $color1['data-key'] . "-ve-" . $color2['data-key'] . "-renkli");
 
-            $range_inputs = $page->find('css', '#filterPrice > div > div.range-slider-input')
-                ->findAll('css', 'input');
+            $range_div = $page->find('css', '#filterPrice > div > div.range-slider-input');
+            if (!is_object($range_div)) {
+                $this->exception_message .= "<span class='exception'> __! Check price range div path !__ </span>\n";
+                throw new Exception($this->exception_message);
+            }
+            $range_inputs = $range_div->findAll('css', 'input');
+            if (count($range_inputs) == 0) {
+                $this->exception_message .= "<span class='exception'>__! Check range input path !__ </span>\n";
+                throw new Exception($this->exception_message);
+            }
 
             $range_min = $range_inputs[0]->getAttribute('value');
+            if (is_null($range_min)) {
+                $this->exception_message .= "<span class='exception'>__! Check minrange attribute !__ </span>\n";
+                throw new Exception($this->exception_message);
+            }
             $range_max = $range_inputs[1]->getAttribute('value');
+            if (is_null($range_max)) {
+                $this->exception_message .= "<span class='exception'>__! Check maxrange attribute !__ </span>\n";
+                throw new Exception($this->exception_message);
+            }
 
             $min_price = rand($range_min, $range_max);
             $max_price = rand($min_price, $range_max);
@@ -117,12 +155,10 @@ class FeatureContext extends MinkContext
                 $min_price . '+TO+' .
                 $max_price . '%5D';
 
-            $session->visit(
-                $this->base_url . $color1['key'] . "-ve-" . $color2['key'] . "-renkli" . $criteria_url
-            );
+            $session->visit($this->base_url . $color1['data-key'] . "-ve-" . $color2['data-key'] . "-renkli" . $criteria_url);
 
             echo "\e[35m==================\nRenk+Fiyat Filtresi\n==================\n\e[0m";
-            $mail_message .= "<h3 id='color+price'>" . "Renk+Fiyat Filtresi" . "</h3><br>\n";
+            $mail_message .= "<h3 id='color+price'> Renk+Fiyat Filtresi  </h3>\n";
 
 
             echo "\"" . $color1['data-name'] . "\" ve \"" . $color2['data-name'] . "\" seçili iken, [" .
@@ -178,50 +214,95 @@ class FeatureContext extends MinkContext
             $mail_message .= "<span> \"" . $brand_attr['data-name'] . "\" ile  \"" . $fl_provider_name . "\" mağazası seçili iken \"" .
                 intval($this->getFilterProgressBar($page)) . "\" ürün var.</span><br>\n";
 
-            echo $mail_message . "\n";
-            echo $this->warning_message;
 
-//            $this->sendMail($mail_message.$this->warning_message);
+            // Final
+
+            echo "\n" . $mail_message . "\n";
+
+            $this->sendMail($mail_message);
 
 
         } catch (Exception $e) {
-            /*$mail_message .= "<br>\n" . $e->getMessage();
-            $this->sendMail($mail_message);*/
+            if ($e->getMessage() != $this->exception_message)
+                $this->exception_message .= $e->getMessage();
+            $this->sendMail($mail_message);
 
             throw new Exception($e->getMessage());
         }
     }
 
-    private function sendMail($message)
+    private function sendMail($msg)
     {
         /**
          * You have to setup PHPMailer to use this method
          * @link https://github.com/PHPMailer/PHPMailer
          */
+        if ($this->exception_message == '')
+            $this->exception_message = 'There is no exception';
+        if ($this->warning_message == '')
+            $this->warning_message = 'No warning';
+
         $mail = new PHPMailer;
         $mail->isSMTP();
         $mail->SMTPDebug = 1;
         $mail->SMTPAuth = true;
         $mail->SMTPSecure = 'ssl';
-        $mail->addAddress('test@vitringez.com', 'muhasturk');
+        $mail->FromName = 'Mustafa Hasturk';
+        $mail->addAddress('tglet@tryalert.com', 'muhasturk');
         $mail->WordWrap = 50;
         $mail->isHTML(true);
-        $mail->Subject = 'BDD test report';
-        $mail->Body = $message;
+        $mail->Subject = $this->mailSubject;
+        $mail->Body = <<<DOC
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <title> Report </title>
+                <meta charset='utf-8'>
+            </head>
+            <body>
+                <header>
+                    {$this->now->format('Y-m-d H:i:s')}
+                </header>
 
-        if (!$mail->send()) {
-            echo "Message could not be sent.\n";
-            echo 'Mailer Error: ' . $mail->ErrorInfo . "\n";
-        } else {
+                <div id='container'>
+
+                    <section id='exception'>
+                    <h1> Exception </h1>
+                    $this->exception_message;
+                    </section>
+
+                    <hr>
+                    <section id='warning'>
+                    <h2> Warning </h2>
+                    $this->warning_message;
+                    </section>
+
+                    <hr><section id='report'>
+                    <h3> BDD Test Report </h3>
+                    $msg
+                    </section>
+                </div>
+                <footer>
+                    <p> created by muhasturk </p>
+                </footer>
+            </body>
+        </html>
+
+DOC;
+        $mail->AltBody = "<strong>You have to get modern mail client!</strong>\n";
+
+        if (!$mail->send())
+            echo "Message could not be sent.\n" . 'Mailer Error: ' . $mail->ErrorInfo . "\n";
+        else
             echo 'Message has been sent';
-        }
+
     }
 
     private function getFilterProgressBar($page)
     {
         $progressBar = $page->findById("filterProgressBar");
         if (!is_object($progressBar)) {
-            $this->exception_message = "__! Check filterProgressBar id or path !__";
+            $this->exception_message .= "<span class='exception'>__! Check filterProgressBar id or path !__</span>\n";
             throw new Exception($this->exception_message);
         }
         return $progressBar->getText();
@@ -233,21 +314,20 @@ class FeatureContext extends MinkContext
         $brand = $brands[rand(0, (count($brands) - 1))];
         $brand_input = $brand->find("css", "input");
         if (!is_object($brand_input)) {
-            $this->exception_message .= "__! Check brands path !__";
+            $this->exception_message .= "<span class='exception'>__! Check brands path !__</span>\n";
             throw new Exception($this->exception_message);
         }
         $attr = array();
         $br_data_name = $brand_input->getAttribute("data-name");
         if ($br_data_name == null) {
-            $warn = "\e[35m__? Check brand data-name attribute ?__\n\e[0m";
-            $this->warning_message .= $warn;
+            $this->warning_message .= "<span class='warning'>\e[35m__? Check brand data-name attribute ?__\n\e[0m\n</span>\n";
             $attr['data-name'] = "\e[35m__! Missing !__\n\e[0m";
         } else
             $attr['data-name'] = $br_data_name;
 
         $br_data_url = $brand_input->getAttribute("data-url");
         if ($br_data_url == null) {
-            $this->exception_message .= "<span class='exceptions'> __! Check brand data-url attribute !__ </span><br>\n";
+            $this->exception_message .= "<span class='exceptions'> __! Check brand data-url attribute !__ </span>\n";
             throw new Exception($this->exception_message);
         }
         $attr['data-url'] = $br_data_url;
@@ -262,13 +342,17 @@ class FeatureContext extends MinkContext
         $attr = array();
         $cl_data_name = $color->getAttribute("data-name");
         if ($cl_data_name == null) {
-            $warn = "\e[35m__? Check data-name attribute of colors ?__\n\e[0m";
-            $this->warning_message .= $warn;
+            $this->warning_message .= "<span class='warning'>\e[35m__? Check data-name attribute of colors ?__\e[0m</span>\n";
             $attr['data-name'] = "\e[35m__! Missing !__ \e[0m";
         } else
             $attr['data-name'] = $cl_data_name;
-        $attr['key'] = $color->getAttribute("data-key");
-        $attr['url'] = $attr['key'] . "-renkli";
+        $cl_data_key = $color->getAttribute("data-key");
+        if ($cl_data_key == null) {
+            $this->exception_message .= "<span class='exception'>\e[35m__? Check data-key attribute of colors ?__\e[0m</span>\n";
+            throw new Exception($this->exception_message);
+        }
+        $attr['data-key'] = $cl_data_key;
+        $attr['url'] = $attr['data-key'] . "-renkli";
         return $attr;
     }
 
@@ -301,6 +385,7 @@ class FeatureContext extends MinkContext
             }
         }
 
+        $prices = [];
         foreach ($prices_em as $d) {
             $prices[] = (float)str_replace(",", "", $d->getText());
         }
@@ -447,26 +532,60 @@ class FeatureContext extends MinkContext
      */
     public function iSetTheFashionAlert() // mouseOver broken
     {
-        $session = $this->getSession();
-        $page = $session->getPage();
+        $mail_message = "<strong class='test_feature'> Fashiın Akert </strong> ";
+        $this->mailSubject = 'FashionnAlert Report';
+        try {
+            $session = $this->getSession();
+            $page = $session->getPage();
 
-        /*$productItem = $page->find("css","html.js body.layout1 div#contentHolder div#mainContent div.catalogListing div.catalogContainer
-        div#catalogResult div.productListingContainer div.productListing div.productItem");
+            $first_product = $page->find('xpath', '//*[@id="catalogResult"]/div/div/div[3]');
+            if (!is_object($first_product)) {
+                $this->exception_message .= "<span class='exception'> __! Check first product path !__ </span>";
+                throw new Exception($this->exception_message);
+            }
 
-        $productItem->mouseOver();*/
+            if (!$first_product->hasAttribute('data-uri')) {
+                $this->exception_message .= "<span class='exception'> __! First product has no data-uri attribute !__ </span>";
+                throw new Exception($this->exception_message);
+            }
+            $session->visit($first_product->getAttribute('data-uri'));
 
-        $session->visit("http://www.vitringez.com/urun/zoopa-zoopa-mor-canta-814916");
-        $alertbutton = $page->find("xpath", '//*[@id="content"]/div[1]/div/div[2]/a[1]');
-        if ($alertbutton == null) {
-            $err = "alertButton could not fetched!\n";
-            throw new Exception($err);
-        } else
+            $alertbutton = $page->find("xpath", '//*[@id="content"]/div[1]/div/div[2]/a[1]');
+            if (!is_object($alertbutton)) {
+                $this->exception_message .= "<span class='exception'> __! Check alertbutton path !__ </span>";
+                throw new Exception($this->exception_message);
+            }
             $alertbutton->click();
 
-        for ($i = 1; $i <= 3; $i++) {
-            $page->find("xpath", '//*[@id="simplemodal-data"]/form/div/label[' . $i . ']/input')->check();
+            for ($i = 1; $i <= 3; $i++) {
+                $alertLabel = $page->find("xpath", '//*[@id="simplemodal-data"]/form/div/label[' . $i . ']/input');
+                if (!is_object($alertLabel)) {
+                    $this->exception_message .= "<span class='exception'> __! Check alertLabel path !__ </span>";
+                    throw new Exception($this->exception_message);
+                }
+                $alertLabel->check();
+            }
+            $alertInput = $page->find("xpath", '//*[@id="simplemodal-data"]/form/input[1]');
+            if (!is_object($alertInput)) {
+                $this->exception_message .= "<span class='exception'> __! Check alertInput path !__ </span>";
+                throw new Exception($this->exception_message);
+            }
+            $alertInput->click(); // send fashion alert request
+
+            $mail_message .= "<p> 'FashionAlert' set successfully </p>";
+            $this->sendMail($mail_message);
+
+        } catch (Exception $e) {
+            if ($e->getMessage() != $this->exception_message)
+                $this->exception_message .= "\n<span class='generated_exception'> $e->getMessage() </span>";
+            $this->sendMail($mail_message);
+
         }
-        $page->find("xpath", '//*[@id="simplemodal-data"]/form/input[1]')->click(); // send fashion alert request
+    }
+
+    private function setTime(){
+        $this->now = new DateTime();
+        $this->now->setTimezone(new DateTimeZone('Europe/Istanbul'));
     }
 
     /**
@@ -474,32 +593,74 @@ class FeatureContext extends MinkContext
      */
     public function iFillInRegistrationForm()
     {
-        $session = $this->getSession();
+        $mail_message = "<strong class='test_feature' style='color: #990000; font-style: oblique'> Register Test </strong>";
+        $this->mailSubject = 'Register Feature Report_'. $this->now->getTimestamp();
+
+        try {
+            $session = $this->getSession();
 //        $session->getDriver()->resizeWindow(1600,900,'current');
-        $page = $session->getPage();
-        $handler = $session->getSelectorsHandler();
+            $page = $session->getPage();
 
-        $page->findById("newUserLink")->click();
+            $newUserLink = $page->findById("newUserLink");
+            if (!is_object($newUserLink)) {
+                $this->setException('newUserLink');
+            }
 
-        $session->wait(10);
+            $newUserLink->click();
+            $session->wait(5000);
 
-        $registerRow = $page->findAll("css", "html.js body.layout1 div#simplemodal-container.simplemodal-container div.simplemodal-wrap
-        div#simplemodal-data.modalContent div.registrationFormContainer form.fos_user_registration_register div.row");
+            $registerRow = $page->findAll("css", "div.row");
+            if (count($registerRow) == 0) {
+                $this->exception_message .= "<span class'exception'> __! Check registerRow path !__ </span>";
+                throw new Exception($this->exception_message);
+            }
 
-        $divRow = array();
-        for ($i = 0; $i < count($registerRow); $i++) {
-            $divRow[] = $registerRow[$i]->find("css", "input");
+            $divRows = [];
+
+            for ($i = 0; $i < count($registerRow); $i++) {
+                $divRow = $registerRow[$i]->find("css", "input");
+                if (!is_object($divRow)) {
+                    $this->exception_message .= "<span class'exception'> __! Check registerRow input path !__ </span>";
+                    throw new Exception($this->exception_message);
+                }
+                $divRows[] = $divRow;
+            }
+            $divRows[0]->setValue($this->generateRandomString(rand(3, 12)));
+            $divRows[1]->setValue($this->generateRandomString(rand(3, 12)));
+            $divRows[2]->setValue($this->generateRandomString(rand(5, 12)));
+            $divRows[3]->setValue($this->generateRandomEmail());
+            $password = $this->generateRandomPassword(rand(6, 14));
+            $divRows[4]->setValue($password);
+            $divRows[5]->setValue($password);
+            $userAgreement = $divRows[6]->find("css", "input");
+            if (!is_object($userAgreement)) {
+                $this->exception_message .= "<span class='exception'>__! Check userAgreement path !__ </span>";
+                throw new Exception($this->exception_message);
+            }
+            $userAgreement->check();
+
+            $submitForm = $divRows[7]->find("css", "input");
+            if (!is_object($submitForm)) {
+                $this->exception_message .= "<span class='exception'>__! Check submitForm path !__ </span>";
+                throw new Exception($this->exception_message);
+            }
+            $submitForm->click();
+
+            $mail_message .= "\n<p>Başarılı bir şekilde üye olundu.</p>";
+            $this->sendMail($mail_message);
+
+        } catch (Exception $e) {
+            if ($e->getMessage() != $this->exception_message)
+                $this->exception_message .= "\n<span class='generated_exception'> {$e->getMessage()} </span>";
+
+            $this->sendMail($mail_message);
         }
-        $divRow[0]->setValue($this->generateRandomString(rand(3, 12)));
-        $divRow[1]->setValue($this->generateRandomString(rand(3, 12)));
-        $divRow[2]->setValue($this->generateRandomString(rand(5, 12)));
-        $divRow[3]->setValue($this->generateRandomEmail());
-        $password = $this->generateRandomPassword(rand(6, 14));
-        $divRow[4]->setValue($password);
-        $divRow[5]->setValue($password);
-        $divRow[6]->find("css", "input")->check();
-        $divRow[7]->find("css", "input")->click();
 
+    }
+
+    private function setException($obj){
+        $this->exception_message .= "<span class='exception'> __! Check $obj path !__ </span>";
+        throw new Exception($this->exception_message);
     }
 
     /**
@@ -509,14 +670,11 @@ class FeatureContext extends MinkContext
     {
         $this->getSession()->wait(intval($duration) * 1000,
             '(0 === jQuery.active && 0 === jQuery(\':animated\').length)');
-
 //        $this->getSession()->wait($duration, '(0 === Ajax.activeRequestCount)');
-
     }
 
     public function generateRandomEmail()
     {
-        $characters = 'abcdefghijklmnopqrstuvwxyz';
         return 'bdd_' . $this->generateRandomString() . '@yahoo.com';
     }
 

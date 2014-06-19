@@ -8,6 +8,7 @@ Feature: User sets alarm feature
     Given I am on homepage
     And I should not see "Hesabım"
     Then I follow "loginRegisterButton"
+    And I wait "1" second
     Then I fill in "username" with "testhesabi"
     Then I fill in "password" with "test1234"
     When I press "_submit"
@@ -17,7 +18,7 @@ Feature: User sets alarm feature
     When I go to "/arama"
     And I should not see "Nedeni bilinmeyen bir hata oluştu."
     When I set the fashion alert
-    When I set the discount alert
+    #When I set the discount alert
 
 
 
