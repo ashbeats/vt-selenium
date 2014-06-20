@@ -10,5 +10,6 @@ Feature: Sort price ascending and descending
     And I check "ascending" sort algorithm
 #    following sort algoritm is not exist on site so it must throw an error
 #    Then I check "bubble" sort algorithm
+    And I sent report mail
 
 

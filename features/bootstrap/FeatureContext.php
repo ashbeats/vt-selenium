@@ -318,7 +318,7 @@ DOC;
         return $progressBar->getText();
     }
 
-    private function getRandBrand($brands)
+    private function getRandBrand($brands) //ok
     {
         $brand = $brands[rand(0, (count($brands) - 1))];
         $brand_input = $brand->find("css", "input");
@@ -336,7 +336,7 @@ DOC;
         return $attr;
     }
 
-    private function getRandColor($colors)
+    private function getRandColor($colors) //ok
     {
         $color = $colors[rand(0, (count($colors) - 1))];
         $attr = [];
@@ -370,32 +370,27 @@ DOC;
 
             $session->visit($algorithm_url);
 
+            $prices_em = [];
             for ($i = 3; $i < 27; $i++) {
-                $prices_em[] = $page->find('css',
+                $em = $page->find('css',
                     '#catalogResult > div > div > div:nth-child(' . $i . ') > div.productDetail > a > span.prices > em.new');
-            }
-
-            foreach ($prices_em as $n) {
-
-                if ($n == null) {
-                    $err = "span.prices > em.new could not fetched...\ncheck span.prices > em.new css path!\n";
-                    throw new Exception($err);
-                }
+                if (!is_object($em))
+                    $this->setException('prices_em-new');
+                $prices_em[] = $em;
             }
 
             $prices = [];
-            foreach ($prices_em as $d) {
+            foreach ($prices_em as $d)
                 $prices[] = (float)str_replace(",", "", $d->getText());
-            }
 
-            $sorted = $prices; // copy new array
-
-            $alg == "descending" ? arsort($sorted) : asort($sorted);
-
-            echo ($sorted == $prices) ? "\e[34m" . $alg . " algorithm works properly\n" :
-                "check \"" . $alg . "\" algorithm. It has a problem!\e[0m\n";
-
-
+            $sorted = $prices;
+            ($alg == "descending") ? arsort($sorted) : asort($sorted);
+            if ($sorted == $prices)
+                $this->mail_message .= "<span class='ok'> $alg algorithm works properly </span>\n";
+            else
+                $this->mail_message .= "<span class='fail'> $alg algorithm has a problem </span>";
+            echo $sorted == $prices ? "\e[34m' $alg ' algorithm works properly\n" :
+                "'$alg' algorithm has a problem!\e[0m\n";
 
         } catch (Exception $e) {
             echo $this->warning_message;
@@ -403,7 +398,6 @@ DOC;
             $this->sendMail();
             throw new Exception($this->exception_message);
         }
-
     }
 
     private function setAlgorithm($alg)
