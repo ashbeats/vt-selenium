@@ -512,26 +512,17 @@ INFO;
         $password = $this->generateRandomString(rand(6, 14));
         $inputs[4]->setValue($password);
         $inputs[5]->setValue($password);
-        $this->getNewUserAgreement($inputs[6])->check();
-        $this->submitNewUserForm($inputs[7])->click();
+        $this->getElementInput($inputs[6])->check();
+        $this->getElementInput($inputs[7])->click();
     }
 
-    private function getNewUserAgreement($checkAgreement)
+    private function getElementInput($element)
     {
-        $userAgreement = $checkAgreement->find("css", "input");
-        if (!is_object($userAgreement))
+        $elementInput = $element->find("css", "input");
+        if (!is_object($elementInput))
             $this->setException('userAgreement');
-        return $userAgreement;
+        return $elementInput;
     }
-
-    private function submitNewUserForm($submitButton)
-    {
-        $submitForm = $submitButton->find("css", "input");
-        if (!is_object($submitForm))
-            $this->setException('submitForm');
-        return $submitButton;
-    }
-
 
     /**
      * @Given /^I wait "([^"]*)" second$/
