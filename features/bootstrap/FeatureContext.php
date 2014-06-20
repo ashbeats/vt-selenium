@@ -369,6 +369,7 @@ DOC;
 
             ($alg == "descending") ? arsort($sorted) : asort($sorted);
             $cond = boolval($sorted == $prices);
+            echo $cond;
             if ($cond)
                 $this->mail_message .= "<span class='ok'> $alg algorithm works properly </span>\n";
             else
@@ -395,7 +396,6 @@ DOC;
                 $this->setException('prices_em-new');
             $prices_em[] = $em;
         }
-
         $prices = [];
         foreach ($prices_em as $d)
             $prices[] = (float)str_replace(",", "", $d->getText());
@@ -627,9 +627,8 @@ DOC;
             $newUserLink = $page->findById("newUserLink");
             if (!is_object($newUserLink))
                 $this->setException('newUserLink');
-
             $newUserLink->click();
-            $session->wait(5000);
+            $session->wait(4000);
 
             $registerRow = $page->findAll("css", "div.row");
             if (count($registerRow) == 0)
@@ -637,40 +636,38 @@ DOC;
 
             $divRows = [];
             for ($i = 0; $i < count($registerRow); $i++) {
-                $divRow = $registerRow[$i]->find("css", "input");
-                if (!is_object($divRow))
+                $dr = $registerRow[$i]->find("css", "input");
+                if (!is_object($dr))
                     $this->setException('divRow');
-                $divRows[] = $divRow;
+                $divRows[] = $dr;
             }
-            $divRows[0]->setValue($this->generateRandomString(rand(3, 12)));
-            $divRows[1]->setValue($this->generateRandomString(rand(3, 12)));
-            $divRows[2]->setValue($this->generateRandomString(rand(5, 12)));
-            $divRows[3]->setValue($this->generateRandomEmail());
-            $password = $this->generateRandomPassword(rand(6, 14));
-            $divRows[4]->setValue($password);
-            $divRows[5]->setValue($password);
-            $userAgreement = $divRows[6]->find("css", "input");
-            if (!is_object($userAgreement))
-                $this->setException('userAgreement');
-            $userAgreement->check();
-
-            $submitForm = $divRows[7]->find("css", "input");
-            if (!is_object($submitForm))
-                $this->setException('submitForm');
-            $submitForm->click();
-
+            $this->setDivRows($divRows);
             $this->mail_message .= "\n<mark class='ok'>Başarılı bir şekilde üye olundu.</mark>";
 
         } catch (Exception $e) {
             $this->exception_message = $e->getMessage();
             $this->sendMail();
             throw new Exception($this->exception_message);
-            /*            if ($e->getMessage() != $this->exception_message)
-                            $this->exception_message .= "\n<span class='generated_exception'> {$e->getMessage()} </span>";
-                        $this->sendMail($this->mail_message);
-                        throw new Exception($this->exception_message);*/
         }
+    }
 
+    private function setDivRows($divRows){
+        $divRows[0]->setValue($this->generateRandomString(rand(3, 12)));
+        $divRows[1]->setValue($this->generateRandomString(rand(3, 12)));
+        $divRows[2]->setValue($this->generateRandomString(rand(5, 12)));
+        $divRows[3]->setValue($this->generateRandomEmail());
+        $password = $this->generateRandomString(rand(6, 14));
+        $divRows[4]->setValue($password);
+        $divRows[5]->setValue($password);
+        $userAgreement = $divRows[6]->find("css", "input");
+        if (!is_object($userAgreement))
+            $this->setException('userAgreement');
+        $userAgreement->check();
+
+        $submitForm = $divRows[7]->find("css", "input");
+        if (!is_object($submitForm))
+            $this->setException('submitForm');
+        $submitForm->click();
     }
 
 
@@ -698,16 +695,7 @@ DOC;
         }
         return $randomString;
     }
-
-    public function generateRandomPassword($length = 10)
-    {
-        $characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPRSTUVYWZ*,./\\#-_0123456789';
-        $randomPassword = '';
-        for ($i = 0; $i < $length; $i++) {
-            $randomPassword .= $characters[rand(0, strlen($characters) - 1)];
-        }
-        return $randomPassword;
-
-    }
 }
+
+
 
