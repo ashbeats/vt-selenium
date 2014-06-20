@@ -22,7 +22,7 @@ class FeatureContext extends MinkContext
      */
     public $exception_message = '';
     /**
-     * Will be used as warninng
+     * connsole warning
      * @type string
      */
     public $warning_message = '';
@@ -325,11 +325,11 @@ DOC;
         if (!is_object($brand_input))
             $this->setException('brandsInput');
         $attr = [];
-        if(!$brand_input->hasAttribute('data-name'))
+        if (!$brand_input->hasAttribute('data-name'))
             $this->setException('brand_data-name');
-        $attr['data-name']= $brand_input->getAttribute("data-name");
+        $attr['data-name'] = $brand_input->getAttribute("data-name");
 
-        if(!$brand_input->hasAttribute('data-url'))
+        if (!$brand_input->hasAttribute('data-url'))
             $this->setException('brand_data-url');
         $attr['data-url'] = $brand_input->getAttribute("data-url");
         $attr['url'] = $attr['data-url'] . "-modelleri/";
@@ -356,40 +356,53 @@ DOC;
      */
     public function iCheckSortAlgorithm($alg)
     {
-        $session = $this->getSession();
-        $page = $session->getPage();
+        $this->mailSubject .= 'SortPrice Feature';
+        try {
+            $session = $this->getSession();
+            $page = $session->getPage();
 
-        if (($algorithm_url = $this->setAlgorithm($alg)) == ($search = $this->base_url . 'arama')) {
-            $err = "there is no sorting algorithm called \"" . $alg . "\" on the site\n";
-            throw new Exception($err);
-        }
-
-        $session->visit($algorithm_url);
-
-        for ($i = 3; $i < 27; $i++) {
-            $prices_em[] = $page->find('css',
-                '#catalogResult > div > div > div:nth-child(' . $i . ') > div.productDetail > a > span.prices > em.new');
-        }
-
-        foreach ($prices_em as $n) {
-
-            if ($n == null) {
-                $err = "span.prices > em.new could not fetched...\ncheck span.prices > em.new css path!\n";
-                throw new Exception($err);
+            $algorithm_url = $this->setAlgorithm($alg);
+            if ($algorithm_url == ($this->base_url . 'arama')) {
+                $this->warning_message .= "<span class='warning'>
+                There is no sorting algorithm called '$alg' on the site </span>\n";
+                throw new Exception('Check test algorithm in .feature file');
             }
+
+            $session->visit($algorithm_url);
+
+            for ($i = 3; $i < 27; $i++) {
+                $prices_em[] = $page->find('css',
+                    '#catalogResult > div > div > div:nth-child(' . $i . ') > div.productDetail > a > span.prices > em.new');
+            }
+
+            foreach ($prices_em as $n) {
+
+                if ($n == null) {
+                    $err = "span.prices > em.new could not fetched...\ncheck span.prices > em.new css path!\n";
+                    throw new Exception($err);
+                }
+            }
+
+            $prices = [];
+            foreach ($prices_em as $d) {
+                $prices[] = (float)str_replace(",", "", $d->getText());
+            }
+
+            $sorted = $prices; // copy new array
+
+            $alg == "descending" ? arsort($sorted) : asort($sorted);
+
+            echo ($sorted == $prices) ? "\e[34m" . $alg . " algorithm works properly\n" :
+                "check \"" . $alg . "\" algorithm. It has a problem!\e[0m\n";
+
+
+
+        } catch (Exception $e) {
+            echo $this->warning_message;
+            $this->exception_message = $e->getMessage();
+            $this->sendMail();
+            throw new Exception($this->exception_message);
         }
-
-        $prices = [];
-        foreach ($prices_em as $d) {
-            $prices[] = (float)str_replace(",", "", $d->getText());
-        }
-
-        $sorted = $prices; // copy new array
-
-        $alg == "descending" ? arsort($sorted) : asort($sorted);
-
-        echo ($sorted == $prices) ? "\e[34m" . $alg . " algorithm works properly\n" :
-            "check \"" . $alg . "\" algorithm. It has a problem!\e[0m\n";
 
     }
 
@@ -407,7 +420,6 @@ DOC;
                 break;
         }
         return $this->base_url . $sort_url;
-
     }
 
 
@@ -417,7 +429,7 @@ DOC;
     public function iFillProfileDetails()
     {
         $this->mail_message = "<strong class='test_feature'> Profile Detail Feature </strong> ";
-        $this->mailSubject = 'ProfileDetails Report_' . $this->now->getTimestamp();
+        $this->mailSubject = 'ProfileDetails Report';
         try {
             $session = $this->getSession();
             $page = $session->getPage();
@@ -426,16 +438,14 @@ DOC;
                 ->setValue($this->generateRandomString(16));
             $page->find('css', '#vitringez_user_profile_form_city')
                 ->setValue($this->generateRandomString(7));
-
             $page->find('xpath', '//*[@id="vitringez_user_profile_form_newsletterSubscribe"]')
                 ->uncheck();
 
             $this->mail_message .= "\n<p>profile details test ok</p>";
-            $this->sendMail($this->mail_message);
+
         } catch (Exception $e) {
-            if (($e->getMessage()) != $this->exception_message)
-                $this->exception_message .= "\n<span class='generated_exception'> $e->getMessage() </span>";
-            $this->sendMail($this->mail_message);
+            $this->exception_message = $e->getMessage();
+            $this->sendMail();
             throw new Exception($this->exception_message);
         }
     }
@@ -568,12 +578,10 @@ DOC;
             $alertInput->click(); // send fashion alert request
 
             $this->mail_message .= "<p> 'FashionAlert' set successfully </p>";
-            $this->sendMail($this->mail_message);
 
         } catch (Exception $e) {
-            if (($e->getMessage()) != $this->exception_message)
-                $this->exception_message .= "\n<span class='generated_exception'> $e->getMessage() </span>";
-            $this->sendMail($this->mail_message);
+            $this->exception_message = $e->getMessage();
+            $this->sendMail();
             throw new Exception($this->exception_message);
         }
     }
