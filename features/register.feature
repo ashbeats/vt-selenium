@@ -12,6 +12,7 @@ Feature: register feature
     When I fill in registration form
     Then I wait "2" second
     Then I should see "Hesabım"
+    And I sent report mail
 
 
 

@@ -27,7 +27,11 @@ class FeatureContext extends MinkContext
      */
     public $warning_message = '';
 
+    private $mail_message = '';
+
+
     public $mailSubject = '';
+
 
     function __construct()
     {
@@ -40,16 +44,14 @@ class FeatureContext extends MinkContext
      */
     public function iMixSomeFilter()
     {
-
-        $mail_message = '';
-        $this->mailSubject = 'MixFuture Report_' . $this->now->getTimestamp();
+        $this->mailSubject = 'MixFuture Report';
 
         try {
             $session = $this->getSession();
             $page = $session->getPage();
 
             echo "\e[31m===========\nGenel Site\n===========\n\e[0m";
-            $mail_message .= "<h1 style=\"color:#CB0C0C;\">Genel Site</h2><br>\n";
+            $this->mail_message .= "<h1 style=\"color:#CB0C0C;\">Genel Site</h2><br>\n";
 
             $providers_container = $page->find("css", "#filterProvider > div > div > div");
             if (!is_object($providers_container))
@@ -62,7 +64,7 @@ class FeatureContext extends MinkContext
 
             $total_providers = count($providers);
             echo "Provider sayısı: <" . $total_providers . ">\n";
-            $mail_message .= "<div id='generalinfo'>\n<span>Provider sayısı: \"" . $total_providers . "\"</span><br>\n";
+            $this->mail_message .= "<div id='generalinfo'>\n<span>Provider sayısı: \"" . $total_providers . "\"</span><br>\n";
 
             $brands_container = $page->find('css', '#filterBrands > div > div > div');
             if (!is_object($brands_container))
@@ -83,7 +85,7 @@ class FeatureContext extends MinkContext
             }
             echo "Toplam ürün: <$total_product> \n\n";
 
-            $mail_message .= "<span> Brand sayısı:  '$total_brand' </span><br>\n
+            $this->mail_message .= "<span> Brand sayısı:  '$total_brand' </span><br>\n
                 <span> Toplam ürün:  '$total_product' </span><br>\n</div>\n";
 
             $colors_container = $page->find('css', '#filterColors > div > div > div > ul');
@@ -99,11 +101,11 @@ class FeatureContext extends MinkContext
             $session->visit($this->base_url . $acolor['url']);
 
             echo "\e[34m=============\nRenk Filtresi\n=============\n\e[0m";
-            $mail_message .= "\n<h2 id='colorfilter'> Renk Filtresi </h2>\n";
+            $this->mail_message .= "\n<h2 id='colorfilter'> Renk Filtresi </h2>\n";
 
             $product = intval($this->getFilterProgressBar($page));
             echo "'{$acolor['data-name']}' seçili iken <$product> ürün var.\n";
-            $mail_message .= "<span> '{$acolor['data-name']}' seçili iken '$product' ürün var.</span>\n";
+            $this->mail_message .= "<span> '{$acolor['data-name']}' seçili iken '$product' ürün var.</span>\n";
 
             // more than one color
             $color1 = $this->getRandColor($colors);
@@ -114,7 +116,7 @@ class FeatureContext extends MinkContext
 
             echo "\"" . $color1['data-name'] . "\" ve \"" . $color2['data-name'] . "\" seçili iken <" .
                 $product . "> ürün var.\n\n";
-            $mail_message .= "<span>\"" . $color1['data-name'] . "\" ve \"" . $color2['data-name'] . "\" seçili iken \"" .
+            $this->mail_message .= "<span>\"" . $color1['data-name'] . "\" ve \"" . $color2['data-name'] . "\" seçili iken \"" .
                 $product . "\" ürün var.</span><br>\n\n";
 
             // price filter
@@ -143,13 +145,13 @@ class FeatureContext extends MinkContext
             $session->visit($this->base_url . $color1['data-key'] . "-ve-" . $color2['data-key'] . "-renkli" . $criteria_url);
 
             echo "\e[35m==================\nRenk+Fiyat Filtresi\n==================\n\e[0m";
-            $mail_message .= "<h3 id='color+price'> Renk+Fiyat Filtresi  </h3>\n";
+            $this->mail_message .= "<h3 id='color+price'> Renk+Fiyat Filtresi  </h3>\n";
 
             $product = intval($this->getFilterProgressBar($page));
             echo "\"" . $color1['data-name'] . "\" ve \"" . $color2['data-name'] . "\" seçili iken, [" .
                 $min_price . " - " . $max_price . "] fiyat aralığında: <" .
                 $product . "> ürün var.\n\n";
-            $mail_message .= "<span>\"" . $color1['data-name'] . "\" ve \"" . $color2['data-name'] . "\" seçili iken, [" .
+            $this->mail_message .= "<span>\"" . $color1['data-name'] . "\" ve \"" . $color2['data-name'] . "\" seçili iken, [" .
                 $min_price . " - " . $max_price . "] fiyat aralığında: \"" .
                 $product . "\" ürün var.</span><br>\n\n";
 
@@ -159,11 +161,11 @@ class FeatureContext extends MinkContext
             $session->visit($this->base_url . $brand_attr['url']);
 
             echo "\e[36m==============\nMarka Filtresi\n==============\n\e[0m";
-            $mail_message .= "<h4 id='brandfilter'> Marka Filtresi </h4> ";
+            $this->mail_message .= "<h4 id='brandfilter'> Marka Filtresi </h4> ";
 
             $product = intval($this->getFilterProgressBar($page));
             echo "\"" . $brand_attr['data-name'] . "\" seçili iken: <$product> ürün var.\n";
-            $mail_message .= "<span> '{$brand_attr['data-name']}' seçili iken: '$product' ürün var.</span><br>\n";
+            $this->mail_message .= "<span> '{$brand_attr['data-name']}' seçili iken: '$product' ürün var.</span><br>\n";
 
             // more than one brand
             $brand1 = $this->getRandBrand($brands);
@@ -173,7 +175,7 @@ class FeatureContext extends MinkContext
             $product = intval($this->getFilterProgressBar($page));
             echo "\"" . $brand1['data-name'] . "\" ve \"" . $brand2['data-name'] . "\" seçili iken: <" .
                 $product . "> ürün var.\n";
-            $mail_message .= "<span>\"" . $brand1['data-name'] . "\" ve \"" . $brand2['data-name'] . "\" seçili iken \"" .
+            $this->mail_message .= "<span>\"" . $brand1['data-name'] . "\" ve \"" . $brand2['data-name'] . "\" seçili iken \"" .
                 $product . "\" ürün var.</span><br>\n";
 
             // brand + provider
@@ -220,20 +222,18 @@ class FeatureContext extends MinkContext
             $product = intval($this->getFilterProgressBar($page));
             echo "\"" . $brand_attr['data-name'] . "\" ile \"" . $fl_provider_name . "\" mağazası seçili iken <" .
                 $product . "> ürüm var.\n";
-            $mail_message .= "<span> \"" . $brand_attr['data-name'] . "\" ile  \"" . $fl_provider_name . "\" mağazası seçili iken \"" .
+            $this->mail_message .= "<span> \"" . $brand_attr['data-name'] . "\" ile  \"" . $fl_provider_name . "\" mağazası seçili iken \"" .
                 $product . "\" ürün var.</span><br>\n";
-
-            $this->sendMail($mail_message);
 
         } catch (Exception $e) {
             if ($e->getMessage() != $this->exception_message)
                 $this->exception_message .= $e->getMessage();
-            $this->sendMail($mail_message);
+            $this->sendMail();
             throw new Exception($e->getMessage());
         }
     }
 
-    private function sendMail($msg)
+    private function sendMail()
     {
         /**
          * You have to setup PHPMailer to use this method
@@ -281,7 +281,7 @@ class FeatureContext extends MinkContext
 
                     <hr><section id='report'>
                     <h3> BDD Test Report </h3>
-                    $msg
+                    $this->mail_message;
                     </section>
                 </div>
                 <footer>
@@ -300,6 +300,16 @@ DOC;
 
     }
 
+    /**
+     * @Given /^I sent report mail$/
+     */
+    public function iSentReportMail()
+    {
+        $this->mailSubject .= "_" . $this->now->getTimestamp();
+        $this->sendMail();
+    }
+
+
     private function getFilterProgressBar($page)
     {
         $progressBar = $page->findById("filterProgressBar");
@@ -312,45 +322,30 @@ DOC;
     {
         $brand = $brands[rand(0, (count($brands) - 1))];
         $brand_input = $brand->find("css", "input");
-        if (!is_object($brand_input)) {
-            $this->exception_message .= "<span class='exception'>__! Check brands path !__</span>\n";
-            throw new Exception($this->exception_message);
-        }
-        $attr = array();
-        $br_data_name = $brand_input->getAttribute("data-name");
-        if ($br_data_name == null) {
-            $this->warning_message .= "<span class='warning'>\e[35m__? Check brand data-name attribute ?__\n\e[0m\n</span>\n";
-            $attr['data-name'] = "\e[35m__! Missing !__\n\e[0m";
-        } else
-            $attr['data-name'] = $br_data_name;
+        if (!is_object($brand_input))
+            $this->setException('brandsInput');
+        $attr = [];
+        if(!$brand_input->hasAttribute('data-name'))
+            $this->setException('brand_data-name');
+        $attr['data-name']= $brand_input->getAttribute("data-name");
 
-        $br_data_url = $brand_input->getAttribute("data-url");
-        if ($br_data_url == null) {
-            $this->exception_message .= "<span class='exceptions'> __! Check brand data-url attribute !__ </span>\n";
-            throw new Exception($this->exception_message);
-        }
-        $attr['data-url'] = $br_data_url;
+        if(!$brand_input->hasAttribute('data-url'))
+            $this->setException('brand_data-url');
+        $attr['data-url'] = $brand_input->getAttribute("data-url");
         $attr['url'] = $attr['data-url'] . "-modelleri/";
         return $attr;
     }
 
-
     private function getRandColor($colors)
     {
         $color = $colors[rand(0, (count($colors) - 1))];
-        $attr = array();
-        $cl_data_name = $color->getAttribute("data-name");
-        if ($cl_data_name == null) {
-            $this->warning_message .= "<span class='warning'>\e[35m__? Check data-name attribute of colors ?__\e[0m</span>\n";
-            $attr['data-name'] = "\e[35m__! Missing !__ \e[0m";
-        } else
-            $attr['data-name'] = $cl_data_name;
-        $cl_data_key = $color->getAttribute("data-key");
-        if ($cl_data_key == null) {
-            $this->exception_message .= "<span class='exception'>\e[35m__? Check data-key attribute of colors ?__\e[0m</span>\n";
-            throw new Exception($this->exception_message);
-        }
-        $attr['data-key'] = $cl_data_key;
+        $attr = [];
+        if (!$color->hasAttribute('data-name'))
+            $this->setException('color-data-name');
+        $attr['data-name'] = $color->getAttribute("data-name");
+        if (!$color->hasAttribute('data-key'))
+            $this->setException('color-data-key');
+        $attr['data-key'] = $color->getAttribute("data-key");
         $attr['url'] = $attr['data-key'] . "-renkli";
         return $attr;
     }
@@ -421,8 +416,8 @@ DOC;
      */
     public function iFillProfileDetails()
     {
-        $mail_message = "<strong class='test_feature'> Profile Detail Feature </strong> ";
-        $this->mailSubject = 'ProfileDetails Report_'.$this->now->getTimestamp();
+        $this->mail_message = "<strong class='test_feature'> Profile Detail Feature </strong> ";
+        $this->mailSubject = 'ProfileDetails Report_' . $this->now->getTimestamp();
         try {
             $session = $this->getSession();
             $page = $session->getPage();
@@ -435,12 +430,12 @@ DOC;
             $page->find('xpath', '//*[@id="vitringez_user_profile_form_newsletterSubscribe"]')
                 ->uncheck();
 
-            $mail_message.="\n<p>profile details test ok</p>";
-            $this->sendMail($mail_message);
+            $this->mail_message .= "\n<p>profile details test ok</p>";
+            $this->sendMail($this->mail_message);
         } catch (Exception $e) {
             if (($e->getMessage()) != $this->exception_message)
                 $this->exception_message .= "\n<span class='generated_exception'> $e->getMessage() </span>";
-            $this->sendMail($mail_message);
+            $this->sendMail($this->mail_message);
             throw new Exception($this->exception_message);
         }
     }
@@ -542,7 +537,7 @@ DOC;
      */
     public function iSetTheFashionAlert() //ok
     {
-        $mail_message = "<strong class='test_feature'> Fashiın Akert </strong> ";
+        $this->mail_message = "<strong class='test_feature'> Fashiın Akert </strong> ";
         $this->mailSubject = 'FashionnAlert Report_' . $this->now->getTimestamp();
         try {
             $session = $this->getSession();
@@ -572,13 +567,13 @@ DOC;
                 $this->setException('alertInput');
             $alertInput->click(); // send fashion alert request
 
-            $mail_message .= "<p> 'FashionAlert' set successfully </p>";
-            $this->sendMail($mail_message);
+            $this->mail_message .= "<p> 'FashionAlert' set successfully </p>";
+            $this->sendMail($this->mail_message);
 
         } catch (Exception $e) {
             if (($e->getMessage()) != $this->exception_message)
                 $this->exception_message .= "\n<span class='generated_exception'> $e->getMessage() </span>";
-            $this->sendMail($mail_message);
+            $this->sendMail($this->mail_message);
             throw new Exception($this->exception_message);
         }
     }
@@ -589,13 +584,20 @@ DOC;
         $this->now->setTimezone(new DateTimeZone('Europe/Istanbul'));
     }
 
+    private function setException($obj)
+    {
+        $this->exception_message .= "<span class='exception'> __! Check '$obj' path | id | attribute !__ </span>";
+        throw new Exception($this->exception_message);
+    }
+
+
     /**
      * @When /^I fill in registration form$/
      */
     public function iFillInRegistrationForm() //ok
     {
-        $mail_message = "<strong class='test_feature' style='color: #990000; font-style: oblique'> Register Test </strong>";
-        $this->mailSubject = 'Register Feature Report_' . $this->now->getTimestamp();
+        $this->mail_message = "<strong class='test_feature' style='color: #990000; font-style: oblique'> Register Test </strong>";
+        $this->mailSubject = 'Register Feature Report';
 
         try {
             $session = $this->getSession();
@@ -637,23 +639,20 @@ DOC;
                 $this->setException('submitForm');
             $submitForm->click();
 
-            $mail_message .= "\n<mark class='ok'>Başarılı bir şekilde üye olundu.</mark>";
-            $this->sendMail($mail_message);
+            $this->mail_message .= "\n<mark class='ok'>Başarılı bir şekilde üye olundu.</mark>";
 
         } catch (Exception $e) {
-            if ($e->getMessage() != $this->exception_message)
-                $this->exception_message .= "\n<span class='generated_exception'> {$e->getMessage()} </span>";
-            $this->sendMail($mail_message);
+            $this->exception_message = $e->getMessage();
+            $this->sendMail();
             throw new Exception($this->exception_message);
+            /*            if ($e->getMessage() != $this->exception_message)
+                            $this->exception_message .= "\n<span class='generated_exception'> {$e->getMessage()} </span>";
+                        $this->sendMail($this->mail_message);
+                        throw new Exception($this->exception_message);*/
         }
 
     }
 
-    private function setException($obj)
-    {
-        $this->exception_message .= "<span class='exception'> __! Check '$obj' path | id | attribute !__ </span>";
-        throw new Exception($this->exception_message);
-    }
 
     /**
      * @Given /^I wait "([^"]*)" second$/
