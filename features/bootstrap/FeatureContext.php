@@ -18,6 +18,15 @@ class FeatureContext extends MinkContext
     private $totalProvider;
 
     protected $now;
+    private $session;
+    private $page;
+
+
+    private function initSession()
+    {
+        $this->session = $this->getSession();
+        $this->page = $this->session->getPage();
+    }
 
     function __construct()
     {
@@ -136,14 +145,12 @@ ALT;
     {
         $this->mailSubject = 'SortPrice Feature';
         try {
-            $session = $this->getSession();
-            $page = $session->getPage();
-
+            $this->initSession();
             $algorithm_url = $this->setAlgorithm($alg);
             $this->checkAlgorithm($alg, $algorithm_url);
 
-            $session->visit($algorithm_url);
-            $prices = $this->getPrices($page);
+            $this->session->visit($algorithm_url);
+            $prices = $this->getPrices($this->page);
             $sorted = $prices;
 
             ($alg == "descending") ? arsort($sorted) : asort($sorted);
@@ -157,28 +164,37 @@ ALT;
                 "'$alg' algorithm has a problem!\e[0m\n";
 
         } catch (Exception $e) {
-            echo $this->warning_message;
-            $this->exception_message = $e->getMessage();
-            $this->sendMail();
-            throw new Exception($this->exception_message);
+            $this->getException($e);
         }
+    }
+
+    public function getException($exception)
+    {
+        $this->exception_message = $exception->getMessage();
+        $this->mailSubject .= "_" . $this->now->getTimestamp();
+        $this->sendMail();
+        throw new Exception($this->exception_message);
     }
 
 
     private function getPrices($page)
     {
         $prices_em = [];
-        for ($i = 3; $i < 27; $i++) {
-            $em = $page->find('css',
-                '#catalogResult > div > div > div:nth-child(' . $i . ') > div.productDetail > a > span.prices > em.new');
-            if (!is_object($em))
-                $this->setException('prices_em-new');
-            $prices_em[] = $em;
-        }
+        for ($i = 3; $i < 27; $i++)
+            $prices_em[] = $this->getPricesEm($page, $i);
         $prices = [];
         foreach ($prices_em as $d)
             $prices[] = (float)str_replace(",", "", $d->getText());
         return $prices;
+    }
+
+    private function getPricesEm($page, $index)
+    {
+        $em = $page->find('css',
+            '#catalogResult > div > div > div:nth-child(' . $index . ') > div.productDetail > a > span.prices > em.new');
+        if (!is_object($em))
+            $this->setException('prices_em-new');
+        return $em;
     }
 
 
@@ -229,9 +245,7 @@ ALT;
             $this->mail_message .= "\n<span class='ok'>profile details test ok</span>";
 
         } catch (Exception $e) {
-            $this->exception_message = $e->getMessage();
-            $this->sendMail();
-            throw new Exception($this->exception_message);
+            $this->getException($e);
         }
     }
 
@@ -257,9 +271,7 @@ ALT;
             $this->mail_message .= "</div>\n";
 
         } catch (Exception $e) {
-            $this->exception_message = $e->getMessage();
-            $this->sendMail();
-            throw new Exception($e->getMessage());
+            $this->getException($e);
         }
 
     }
@@ -324,11 +336,8 @@ ALT;
         <div id='general'>\n
         <span class='totalProduct'> Toplam ürün: $this->totalProduct </span><br>\n
         <span class='totalProvider'> Provider sayısı: $this->totalProvider </span><br>\n
-
         </div>\n
-
 INFO;
-
     }
 
     private function setUrl($category)
@@ -388,9 +397,7 @@ INFO;
             $this->mail_message .= "<span class='ok'> 'FashionAlert' set successfully </span>";
 
         } catch (Exception $e) {
-            $this->exception_message = $e->getMessage();
-            $this->sendMail();
-            throw new Exception($this->exception_message);
+            $this->getException($e);
         }
     }
 
@@ -465,9 +472,7 @@ INFO;
             $this->mail_message .= "\n<mark class='ok'>Başarılı bir şekilde üye olundu.</mark>";
 
         } catch (Exception $e) {
-            $this->exception_message = $e->getMessage();
-            $this->sendMail();
-            throw new Exception($this->exception_message);
+            $this->getException($e);
         }
     }
 
@@ -733,10 +738,7 @@ INFO;
                 $product . "\" ürün var.</span><br>\n";
 
         } catch (Exception $e) {
-            if ($e->getMessage() != $this->exception_message)
-                $this->exception_message .= $e->getMessage();
-            $this->sendMail();
-            throw new Exception($e->getMessage());
+            $this->getException($e);
         }
     }
 
@@ -772,8 +774,6 @@ INFO;
         $attr['url'] = $attr['data-key'] . "-renkli";
         return $attr;
     }
-
-
 }
 
 
