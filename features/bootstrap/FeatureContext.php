@@ -309,7 +309,6 @@ DOC;
         $this->sendMail();
     }
 
-
     private function getFilterProgressBar($page)
     {
         $progressBar = $page->findById("filterProgressBar");
@@ -356,40 +355,25 @@ DOC;
      */
     public function iCheckSortAlgorithm($alg)
     {
-        $this->mailSubject .= 'SortPrice Feature';
+        $this->mailSubject = 'SortPrice Feature';
         try {
             $session = $this->getSession();
             $page = $session->getPage();
 
             $algorithm_url = $this->setAlgorithm($alg);
-            if ($algorithm_url == ($this->base_url . 'arama')) {
-                $this->warning_message .= "<span class='warning'>
-                There is no sorting algorithm called '$alg' on the site </span>\n";
-                throw new Exception('Check test algorithm in .feature file');
-            }
+            $this->checkAlgorithm($alg, $algorithm_url);
 
             $session->visit($algorithm_url);
-
-            $prices_em = [];
-            for ($i = 3; $i < 27; $i++) {
-                $em = $page->find('css',
-                    '#catalogResult > div > div > div:nth-child(' . $i . ') > div.productDetail > a > span.prices > em.new');
-                if (!is_object($em))
-                    $this->setException('prices_em-new');
-                $prices_em[] = $em;
-            }
-
-            $prices = [];
-            foreach ($prices_em as $d)
-                $prices[] = (float)str_replace(",", "", $d->getText());
-
+            $prices = $this->getPrices($page);
             $sorted = $prices;
+
             ($alg == "descending") ? arsort($sorted) : asort($sorted);
-            if ($sorted == $prices)
+            $cond = boolval($sorted == $prices);
+            if ($cond)
                 $this->mail_message .= "<span class='ok'> $alg algorithm works properly </span>\n";
             else
                 $this->mail_message .= "<span class='fail'> $alg algorithm has a problem </span>";
-            echo $sorted == $prices ? "\e[34m' $alg ' algorithm works properly\n" :
+            echo $cond ? "\e[34m' $alg ' algorithm works properly\n" :
                 "'$alg' algorithm has a problem!\e[0m\n";
 
         } catch (Exception $e) {
@@ -399,6 +383,25 @@ DOC;
             throw new Exception($this->exception_message);
         }
     }
+
+
+    private function getPrices($page)
+    {
+        $prices_em = [];
+        for ($i = 3; $i < 27; $i++) {
+            $em = $page->find('css',
+                '#catalogResult > div > div > div:nth-child(' . $i . ') > div.productDetail > a > span.prices > em.new');
+            if (!is_object($em))
+                $this->setException('prices_em-new');
+            $prices_em[] = $em;
+        }
+
+        $prices = [];
+        foreach ($prices_em as $d)
+            $prices[] = (float)str_replace(",", "", $d->getText());
+        return $prices;
+    }
+
 
     private function setAlgorithm($alg)
     {
@@ -414,6 +417,15 @@ DOC;
                 break;
         }
         return $this->base_url . $sort_url;
+    }
+
+    private function checkAlgorithm($alg, $alg_url)
+    {
+        if ($alg_url == ($this->base_url . 'arama')) {
+            $this->warning_message .= "<span class='warning'>
+                There is no sorting algorithm called '$alg' on the site </span>\n";
+            throw new Exception('Check test algorithm in .feature file');
+        }
     }
 
 
@@ -435,7 +447,7 @@ DOC;
             $page->find('xpath', '//*[@id="vitringez_user_profile_form_newsletterSubscribe"]')
                 ->uncheck();
 
-            $this->mail_message .= "\n<p>profile details test ok</p>";
+            $this->mail_message .= "\n<span class='ok'>profile details test ok</span>";
 
         } catch (Exception $e) {
             $this->exception_message = $e->getMessage();
@@ -542,7 +554,7 @@ DOC;
     public function iSetTheFashionAlert() //ok
     {
         $this->mail_message = "<strong class='test_feature'> Fashiın Akert </strong> ";
-        $this->mailSubject = 'FashionnAlert Report_' . $this->now->getTimestamp();
+        $this->mailSubject = 'FashionnAlert Report';
         try {
             $session = $this->getSession();
             $page = $session->getPage();
@@ -571,7 +583,7 @@ DOC;
                 $this->setException('alertInput');
             $alertInput->click(); // send fashion alert request
 
-            $this->mail_message .= "<p> 'FashionAlert' set successfully </p>";
+            $this->mail_message .= "<span class='ok'> 'FashionAlert' set successfully </span>";
 
         } catch (Exception $e) {
             $this->exception_message = $e->getMessage();
@@ -579,6 +591,12 @@ DOC;
             throw new Exception($this->exception_message);
         }
     }
+
+    private function getFirstProduct($page)
+    {
+
+    }
+
 
     private function setTime() //ok
     {
