@@ -21,17 +21,16 @@ class FeatureContext extends MinkContext
     private $session;
     private $page;
 
+    function __construct()
+    {
+        $this->base_url = "http://vitringez.com/";
+        $this->setTime();
+    }
 
     private function initSession()
     {
         $this->session = $this->getSession();
         $this->page = $this->session->getPage();
-    }
-
-    function __construct()
-    {
-        $this->base_url = "http://vitringez.com/";
-        $this->setTime();
     }
 
     /**
@@ -117,7 +116,6 @@ DOC;
         return <<<ALT
         <strong>\n You have to get modern mail client! \n</strong>\n
 ALT;
-
     }
 
     /**
@@ -137,7 +135,6 @@ ALT;
         return $progressBar->getText();
     }
 
-
     /**
      * @When /^I check "([^"]*)" sort algorithm$/
      */
@@ -148,25 +145,31 @@ ALT;
             $this->initSession();
             $algorithm_url = $this->setAlgorithm($alg);
             $this->checkAlgorithm($alg, $algorithm_url);
-
             $this->session->visit($algorithm_url);
-            $prices = $this->getPrices($this->page);
-            $sorted = $prices;
-
-            ($alg == "descending") ? arsort($sorted) : asort($sorted);
-            $cond = boolval($sorted == $prices);
-
-            if ($cond) // cond must be return boolean check
-                $this->mail_message .= "<span class='ok'> $alg algorithm works properly </span>\n";
-            else
-                $this->mail_message .= "<span class='fail'> $alg algorithm has a problem </span>";
-            echo $cond ? "\e[34m' $alg ' algorithm works properly\n" :
-                "'$alg' algorithm has a problem!\e[0m\n";
-
+            $this->getSortAlgorithmResult($this->comparePrices($alg, $this->page), $alg);
         } catch (Exception $e) {
             $this->getException($e);
         }
     }
+
+    private function getSortAlgorithmResult($condition, $algorithm)
+    {
+        $this->mail_message .= "<span class='fail'> $algorithm algorithm has a problem </span><br>";
+        if ($condition)
+            $this->mail_message = "<span class='ok'> $algorithm algorithm works properly </span><br>\n";
+        echo $condition ? "\e[34m'$algorithm' algorithm works properly\n" :
+            "'$algorithm' algorithm has a problem!\e[0m\n";
+    }
+
+    private function comparePrices($alg, $page)
+    {
+        $prices = $this->getPrices($page);
+        $sorted = $prices;
+        $alg == "descending" ? arsort($sorted) : asort($sorted);
+        $cond = boolval($sorted == $prices);
+        return $cond;
+    }
+
 
     public function getException($exception)
     {
