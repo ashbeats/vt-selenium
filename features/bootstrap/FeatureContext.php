@@ -2,46 +2,562 @@
 /**
  * @author Mustafa Hasturk
  * @site http://github.com/muhasturk
- *
  */
 use Behat\MinkExtension\Context\MinkContext;
 
 class FeatureContext extends MinkContext
 {
-    public $base_url = "http://vitringez.com/";
-
-    /**
-     * related time
-     * Generated with setTime methof after construct has been run
-     */
-    protected $now;
-
-    /**
-     * Will be used as exception
-     * @type string
-     */
+    public $base_url;
     public $exception_message = '';
-    /**
-     * connsole warning
-     * @type string
-     */
     public $warning_message = '';
-
     private $mail_message = '';
+    public $mailSubject = 'BDD Report';
 
+    private $totalProduct;
+    private $subProduct;
+    private $totalProvider;
 
-    public $mailSubject = '';
-
+    protected $now;
 
     function __construct()
     {
+        $this->base_url = "http://vitringez.com/";
         $this->setTime();
     }
-
 
     /**
      * @Then /^I mix some filter$/
      */
+    private function sendMail()
+    {
+        /**
+         * You have to setup PHPMailer to use this method
+         * @link https://github.com/PHPMailer/PHPMailer
+         */
+        $this->setNoProblemStatus();
+
+        $mail = new PHPMailer;
+        $mail->isSMTP();
+        $mail->SMTPDebug = 0;
+        $mail->SMTPAuth = true;
+        $mail->SMTPSecure = 'ssl';
+        $mail->FromName = 'Mustafa Hasturk';
+        $mail->addAddress('tzzzf@droplar.com', 'muhasturk');
+        $mail->WordWrap = 50;
+        $mail->isHTML(true);
+        $mail->Subject = $this->mailSubject;
+        $mail->Body = $this->setMailBody();
+        $mail->AltBody = $this->setMailAltBody();
+
+        echo((!$mail->send()) ? "Message could not be sent.\n 'Mailer Error: ' . $mail->ErrorInfo . \n" :
+            "Message has been sent\n");
+
+    }
+
+    private function setNoProblemStatus()
+    {
+        if (empty($this->exception_message))
+            $this->exception_message = 'There is no exception';
+        if (empty($this->warning_message))
+            $this->warning_message = 'No warning';
+    }
+
+    private function setMailBody()
+    {
+        return <<<DOC
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <title> Report </title>
+                <meta charset='utf-8'>
+            </head>
+            <body>
+                <header>
+                    <p> generated on {$this->now->format('Y-m-d H:i:s')} </p>
+                </header>
+
+                <div id='container'>
+
+                    <section id='exception'>
+                    <h1> Exception </h1>
+                    $this->exception_message;
+                    </section>
+
+                    <hr>
+                    <section id='warning'>
+                    <h2> Warning </h2>
+                    $this->warning_message;
+                    </section>
+
+                    <hr><section id='report'>
+                    <h3> BDD Test Report </h3>
+                    $this->mail_message;
+                    </section>
+                </div>
+                <footer>
+                    <p> created by muhasturk </p>
+                </footer>
+            </body>
+        </html>
+DOC;
+
+    }
+
+    private function setMailAltBody()
+    {
+        return <<<ALT
+        <strong>\n You have to get modern mail client! \n</strong>\n
+ALT;
+
+    }
+
+    /**
+     * @Given /^I sent report mail$/
+     */
+    public function iSentReportMail()
+    {
+        $this->mailSubject .= "_" . $this->now->getTimestamp();
+        $this->sendMail();
+    }
+
+    private function getFilterProgressBar($page)
+    {
+        $progressBar = $page->findById("filterProgressBar");
+        if (!is_object($progressBar))
+            $this->setException('filterProgressBar');
+        return $progressBar->getText();
+    }
+
+
+    /**
+     * @When /^I check "([^"]*)" sort algorithm$/
+     */
+    public function iCheckSortAlgorithm($alg)
+    {
+        $this->mailSubject = 'SortPrice Feature';
+        try {
+            $session = $this->getSession();
+            $page = $session->getPage();
+
+            $algorithm_url = $this->setAlgorithm($alg);
+            $this->checkAlgorithm($alg, $algorithm_url);
+
+            $session->visit($algorithm_url);
+            $prices = $this->getPrices($page);
+            $sorted = $prices;
+
+            ($alg == "descending") ? arsort($sorted) : asort($sorted);
+            $cond = boolval($sorted == $prices);
+
+            if ($cond) // cond must be return boolean check
+                $this->mail_message .= "<span class='ok'> $alg algorithm works properly </span>\n";
+            else
+                $this->mail_message .= "<span class='fail'> $alg algorithm has a problem </span>";
+            echo $cond ? "\e[34m' $alg ' algorithm works properly\n" :
+                "'$alg' algorithm has a problem!\e[0m\n";
+
+        } catch (Exception $e) {
+            echo $this->warning_message;
+            $this->exception_message = $e->getMessage();
+            $this->sendMail();
+            throw new Exception($this->exception_message);
+        }
+    }
+
+
+    private function getPrices($page)
+    {
+        $prices_em = [];
+        for ($i = 3; $i < 27; $i++) {
+            $em = $page->find('css',
+                '#catalogResult > div > div > div:nth-child(' . $i . ') > div.productDetail > a > span.prices > em.new');
+            if (!is_object($em))
+                $this->setException('prices_em-new');
+            $prices_em[] = $em;
+        }
+        $prices = [];
+        foreach ($prices_em as $d)
+            $prices[] = (float)str_replace(",", "", $d->getText());
+        return $prices;
+    }
+
+
+    private function setAlgorithm($alg)
+    {
+        switch ($alg) {
+            case "ascending":
+                $sort_url = "arama?sort=price|asc";
+                break;
+            case "descending":
+                $sort_url = "arama?sort=price|desc";
+                break;
+            default:
+                $sort_url = "arama";
+                break;
+        }
+        return $this->base_url . $sort_url;
+    }
+
+    private function checkAlgorithm($alg, $alg_url)
+    {
+        if ($alg_url == ($this->base_url . 'arama')) {
+            $this->warning_message .= "<span class='warning'>
+                There is no sorting algorithm called '$alg' on the site </span>\n";
+            throw new Exception('Check test algorithm in .feature file');
+        }
+    }
+
+
+    /**
+     * @When /^I fill profile details$/
+     */
+    public function iFillProfileDetails()
+    {
+        $this->mail_message = "<strong class='test_feature'> Profile Detail Feature </strong> ";
+        $this->mailSubject = 'ProfileDetails Report';
+        try {
+            $session = $this->getSession();
+            $page = $session->getPage();
+
+            $page->find('css', '#vitringez_user_profile_form_biography')
+                ->setValue($this->generateRandomString(16));
+            $page->find('css', '#vitringez_user_profile_form_city')
+                ->setValue($this->generateRandomString(7));
+            $page->find('xpath', '//*[@id="vitringez_user_profile_form_newsletterSubscribe"]')
+                ->uncheck();
+
+            $this->mail_message .= "\n<span class='ok'>profile details test ok</span>";
+
+        } catch (Exception $e) {
+            $this->exception_message = $e->getMessage();
+            $this->sendMail();
+            throw new Exception($this->exception_message);
+        }
+    }
+
+    /**
+     * @When /^I scan "([^"]*)" category$/
+     */
+    public function iScanCategory($category)
+    {
+        $this->mailSubject = "ScanCategory Feature";
+        try {
+            $session = $this->getSession();
+            $page = $session->getPage();
+
+            $category_url = $this->setUrl($category);
+            $session->visit($category_url);
+
+            $this->setGeneralVariable($page);
+            $this->setGeneralInfo();
+            $this->mail_message = "<div class='providers'>\n";
+
+            $providers = $this->setProvidersDiv($page);
+            $this->scanProvider($page, $session, $providers, $category_url);
+            $this->mail_message .= "</div>\n";
+
+        } catch (Exception $e) {
+            $this->exception_message = $e->getMessage();
+            $this->sendMail();
+            throw new Exception($e->getMessage());
+        }
+
+    }
+
+    private function scanProvider($page, $session, $providers, $category_url)
+    {
+        for ($i = 1; $i < $this->totalProvider; $i++) {
+            $attr = $this->setSingleProvider($i, $providers, $category_url);
+            $session->visit($attr['url']);
+            $this->subProduct = intval($this->getFilterProgressBar($page));
+
+            echo ($this->subProduct <= 0) ? $attr['data-name'] . "\033[01;31m de/da ürün yok! \033[0m\n" :
+                $attr['data-name'] . "   -> " . $this->subProduct . " ürün var\n";
+
+            $this->mail_message .= "<span class='provider'>'{$attr['data-name']}' de/da {$this->checkSubProduct()} </span><br>\n";
+            $session->visit($category_url);
+
+        }
+    }
+
+    private function checkSubProduct()
+    {
+        $sp = "<span class='fail'> ürün yok.</span>\n";
+        if ($this->subProduct > 0)
+            $sp = "<span class='ok'> '$this->subProduct' ürün var. </span>\n";
+        return $sp;
+    }
+
+    private function setSingleProvider($counter, $providers, $category_url)
+    {
+        $pr = $providers[$counter]->find('css', 'input');
+        if (!is_object($pr))
+            $this->setException('singleProvider-input');
+        if (!$pr->hasAttribute('data-url'))
+            $this->setException('singleProvider-data-url');
+        if (!$pr->hasAttribute('data-name'))
+            $this->setException('singleProvider-data-name');
+
+        return ['data-name' => $pr->getAttribute("data-name"),
+            'data-url' => $pr->getAttribute("data-url"),
+            'url' => $category_url . "/" . $pr->getAttribute("data-url") . "-magazasi"];
+    }
+
+    private function setProvidersDiv($page)
+    {
+        $innerDiv = $page->find('xpath', '//*[@id="filterProvider"]/div/div/div');
+        if (!is_object($innerDiv))
+            $this->setException('innerDiv');
+        return $innerDiv->findAll('css', 'div');
+    }
+
+    private function setGeneralVariable($page)
+    {
+        $this->totalProduct = intval($this->getFilterProgressBar($page));
+        $this->totalProvider = count($this->setProvidersDiv($page));
+
+    }
+
+    private function setGeneralInfo()
+    {
+        $this->mail_message .= <<<INFO
+        <div id='general'>\n
+        <span class='totalProduct'> Toplam ürün: $this->totalProduct </span><br>\n
+        <span class='totalProvider'> Provider sayısı: $this->totalProvider </span><br>\n
+
+        </div>\n
+
+INFO;
+
+    }
+
+    private function setUrl($category)
+    {
+        switch ($category) {
+            case "kadın":
+                $data_url = "kadin";
+                break;
+            case "erkek":
+                $data_url = "erkek";
+                break;
+            case "çocuk":
+                $data_url = "cocuk";
+                break;
+            case "ev":
+                $data_url = "ev";
+                break;
+            default:
+                $data_url = 'arama';
+                break;
+        }
+        return $this->base_url . $data_url;
+    }
+
+    /**
+     * @When /^I set the discount alert$/
+     */
+    public function iSetTheDiscountAlert()
+    {
+        $session = $this->getSession();
+        $page = $session->getPage();
+
+        $session->visit("http://www.vitringez.com/urun/bisous-rose-metalik-canta-207258");
+        $page->find("xpath", '//*[@id="content"]/div[1]/div/div[2]/a[2]')->click();
+
+        for ($i = 1; $i <= 4; $i++) {
+            $page->find("xpath", '//*[@id="simplemodal-data"]/form/div/label[' . $i . ']/input')->check();
+        }
+        $page->find("xpath", '//*[@id="simplemodal-data"]/form/input[1]')->click();
+
+    }
+
+    /**
+     * @When /^I set the fashion alert$/
+     */
+    public function iSetTheFashionAlert() //ok
+    {
+        $this->mail_message = "<strong class='test_feature'> Fashiın Akert </strong><br>\n ";
+        $this->mailSubject = 'FashionnAlert Report';
+        try {
+            $session = $this->getSession();
+            $page = $session->getPage();
+            $session->visit($this->getFirstProduct($page)['data-uri']);
+            $this->getFashionAlertButton($page)->click();
+            $this->checkFashionInput($page);
+            $this->submitFashionAlert($page);
+            $this->mail_message .= "<span class='ok'> 'FashionAlert' set successfully </span>";
+
+        } catch (Exception $e) {
+            $this->exception_message = $e->getMessage();
+            $this->sendMail();
+            throw new Exception($this->exception_message);
+        }
+    }
+
+    private function submitFashionAlert($page)
+    {
+        $alertSubmit = $page->find("xpath", '//*[@id="simplemodal-data"]/form/input[1]');
+        if (!is_object($alertSubmit))
+            $this->setException('alertSubmit');
+        $alertSubmit->click(); // send fashion alert request
+    }
+
+    private function checkFashionInput($page)
+    {
+        for ($i = 1; $i <= 3; $i++) {
+            $alertLabel = $page->find("xpath", '//*[@id="simplemodal-data"]/form/div/label[' . $i . ']/input');
+            if (!is_object($alertLabel))
+                $this->setException('alertLabel');
+            $alertLabel->check();
+        }
+    }
+
+    private function getFashionAlertButton($page)
+    {
+        $alertButton = $page->find('css', '#content > div.productDetail > div > div.productButtons > a.gradient.fashionAlert');
+        if (!is_object($alertButton))
+            $this->setException('alertButton');
+        return $alertButton;
+    }
+
+    private function getFirstProduct($page)
+    {
+        $firstProduct = $page->find('xpath', '//*[@id="catalogResult"]/div/div/div[4]');
+        if (!is_object($firstProduct))
+            $this->setException('firstProduct');
+
+        if (!$firstProduct->hasAttribute('data-uri'))
+            $this->setException('firstProduct_data-uri');
+
+        return ['firstProduct' => $firstProduct,
+            'data-uri' => $firstProduct->getAttribute('data-uri')];
+    }
+
+    private function setTime() //ok
+    {
+        $this->now = new DateTime();
+        $this->now->setTimezone(new DateTimeZone('Europe/Istanbul'));
+    }
+
+    private function setException($obj)
+    {
+        $this->exception_message .= "<span class='exception'> __! Check '$obj' path | id | attribute !__ </span>";
+        throw new Exception($this->exception_message);
+    }
+
+
+    /**
+     * @When /^I fill in registration form$/
+     */
+    public function iFillInRegistrationForm() //ok
+    {
+        $this->mail_message = "<strong class='test_feature' style='color: #990000; font-style: oblique'> Register Test </strong>";
+        $this->mailSubject = 'Register Feature Report';
+
+        try {
+            $session = $this->getSession();
+            $page = $session->getPage();
+            $this->runNewUserLink($page);
+            $this->iWaitSecond("3");
+            $registerInputs = $this->getRegisterInputs($page);
+            $this->setRegisterInputs($registerInputs);
+
+            $this->mail_message .= "\n<mark class='ok'>Başarılı bir şekilde üye olundu.</mark>";
+
+        } catch (Exception $e) {
+            $this->exception_message = $e->getMessage();
+            $this->sendMail();
+            throw new Exception($this->exception_message);
+        }
+    }
+
+    private function getRegisterInputs($page)
+    {
+        $divRows = $this->getRegisterDivRows($page);
+        $registerInputs = [];
+        for ($i = 0; $i < count($divRows); $i++) {
+            $ri = $divRows[$i]->find("css", "input");
+            if (!is_object($ri))
+                $this->setException('registerDiv.Row > input');
+            $registerInputs[] = $ri;
+        }
+        return $registerInputs;
+    }
+
+    private function getRegisterDivRows($page)
+    {
+        $divRows = $page->findAll("css", "div.row");
+        if (count($divRows) == 0)
+            $this->setException('divRows');
+        foreach ($divRows as $div)
+            if (!is_object($div))
+                $this->setException('registerDiv.Row');
+        return $divRows;
+    }
+
+    private function runNewUserLink($page)
+    {
+        $newUserLink = $page->findById("newUserLink");
+        if (!is_object($newUserLink))
+            $this->setException('newUserLink');
+        $newUserLink->click();
+    }
+
+    private function setRegisterInputs($inputs)
+    {
+        $inputs[0]->setValue($this->generateRandomString(rand(3, 12)));
+        $inputs[1]->setValue($this->generateRandomString(rand(3, 12)));
+        $inputs[2]->setValue($this->generateRandomString(rand(5, 12)));
+        $inputs[3]->setValue($this->generateRandomEmail());
+        $password = $this->generateRandomString(rand(6, 14));
+        $inputs[4]->setValue($password);
+        $inputs[5]->setValue($password);
+        $this->getNewUserAgreement($inputs[6])->check();
+        $this->submitNewUserForm($inputs[7])->click();
+    }
+
+    private function getNewUserAgreement($checkAgreement)
+    {
+        $userAgreement = $checkAgreement->find("css", "input");
+        if (!is_object($userAgreement))
+            $this->setException('userAgreement');
+        return $userAgreement;
+    }
+
+    private function submitNewUserForm($submitButton)
+    {
+        $submitForm = $submitButton->find("css", "input");
+        if (!is_object($submitForm))
+            $this->setException('submitForm');
+        return $submitButton;
+    }
+
+
+    /**
+     * @Given /^I wait "([^"]*)" second$/
+     */
+    public function iWaitSecond($duration)
+    {
+        $this->getSession()->wait(intval($duration) * 1000,
+            '(0 === jQuery.active && 0 === jQuery(\':animated\').length)');
+//        $this->getSession()->wait($duration, '(0 === Ajax.activeRequestCount)');
+    }
+
+    public function generateRandomEmail()
+    {
+        return 'bdd_' . $this->generateRandomString() . '@yahoo.com';
+    }
+
+    public function generateRandomString($length = 6)
+    {
+        $characters = 'abcdefghijklmnopqrstuvwxyz';
+        $randomString = '';
+        for ($i = 0; $i < $length; $i++) {
+            $randomString .= $characters[rand(0, strlen($characters) - 1)];
+        }
+        return $randomString;
+    }
+
     public function iMixSomeFilter()
     {
         $this->mailSubject = 'MixFuture Report';
@@ -233,89 +749,6 @@ class FeatureContext extends MinkContext
         }
     }
 
-    private function sendMail()
-    {
-        /**
-         * You have to setup PHPMailer to use this method
-         * @link https://github.com/PHPMailer/PHPMailer
-         */
-        if ($this->exception_message == '')
-            $this->exception_message = 'There is no exception';
-        if ($this->warning_message == '')
-            $this->warning_message = 'No warning';
-
-        $mail = new PHPMailer;
-        $mail->isSMTP();
-        $mail->SMTPDebug = 1;
-        $mail->SMTPAuth = true;
-        $mail->SMTPSecure = 'ssl';
-        $mail->FromName = 'Mustafa Hasturk';
-        $mail->addAddress('tzzzf@droplar.com', 'muhasturk');
-        $mail->WordWrap = 50;
-        $mail->isHTML(true);
-        $mail->Subject = $this->mailSubject;
-        $mail->Body = <<<DOC
-        <!DOCTYPE html>
-        <html>
-            <head>
-                <title> Report </title>
-                <meta charset='utf-8'>
-            </head>
-            <body>
-                <header>
-                    <p> generated on {$this->now->format('Y-m-d H:i:s')} </p>
-                </header>
-
-                <div id='container'>
-
-                    <section id='exception'>
-                    <h1> Exception </h1>
-                    $this->exception_message;
-                    </section>
-
-                    <hr>
-                    <section id='warning'>
-                    <h2> Warning </h2>
-                    $this->warning_message;
-                    </section>
-
-                    <hr><section id='report'>
-                    <h3> BDD Test Report </h3>
-                    $this->mail_message;
-                    </section>
-                </div>
-                <footer>
-                    <p> created by muhasturk </p>
-                </footer>
-            </body>
-        </html>
-
-DOC;
-        $mail->AltBody = "<strong>You have to get modern mail client!</strong>\n";
-
-        if (!$mail->send())
-            echo "Message could not be sent.\n" . 'Mailer Error: ' . $mail->ErrorInfo . "\n";
-        else
-            echo 'Message has been sent';
-
-    }
-
-    /**
-     * @Given /^I sent report mail$/
-     */
-    public function iSentReportMail()
-    {
-        $this->mailSubject .= "_" . $this->now->getTimestamp();
-        $this->sendMail();
-    }
-
-    private function getFilterProgressBar($page)
-    {
-        $progressBar = $page->findById("filterProgressBar");
-        if (!is_object($progressBar))
-            $this->setException('filterProgressBar');
-        return $progressBar->getText();
-    }
 
     private function getRandBrand($brands) //ok
     {
@@ -350,352 +783,9 @@ DOC;
     }
 
 
-    /**
-     * @When /^I check "([^"]*)" sort algorithm$/
-     */
-    public function iCheckSortAlgorithm($alg)
-    {
-        $this->mailSubject = 'SortPrice Feature';
-        try {
-            $session = $this->getSession();
-            $page = $session->getPage();
-
-            $algorithm_url = $this->setAlgorithm($alg);
-            $this->checkAlgorithm($alg, $algorithm_url);
-
-            $session->visit($algorithm_url);
-            $prices = $this->getPrices($page);
-            $sorted = $prices;
-
-            ($alg == "descending") ? arsort($sorted) : asort($sorted);
-            $cond = boolval($sorted == $prices);
-            echo $cond;
-            if ($cond)
-                $this->mail_message .= "<span class='ok'> $alg algorithm works properly </span>\n";
-            else
-                $this->mail_message .= "<span class='fail'> $alg algorithm has a problem </span>";
-            echo $cond ? "\e[34m' $alg ' algorithm works properly\n" :
-                "'$alg' algorithm has a problem!\e[0m\n";
-
-        } catch (Exception $e) {
-            echo $this->warning_message;
-            $this->exception_message = $e->getMessage();
-            $this->sendMail();
-            throw new Exception($this->exception_message);
-        }
-    }
-
-
-    private function getPrices($page)
-    {
-        $prices_em = [];
-        for ($i = 3; $i < 27; $i++) {
-            $em = $page->find('css',
-                '#catalogResult > div > div > div:nth-child(' . $i . ') > div.productDetail > a > span.prices > em.new');
-            if (!is_object($em))
-                $this->setException('prices_em-new');
-            $prices_em[] = $em;
-        }
-        $prices = [];
-        foreach ($prices_em as $d)
-            $prices[] = (float)str_replace(",", "", $d->getText());
-        return $prices;
-    }
-
-
-    private function setAlgorithm($alg)
-    {
-        switch ($alg) {
-            case "ascending":
-                $sort_url = "arama?sort=price|asc";
-                break;
-            case "descending":
-                $sort_url = "arama?sort=price|desc";
-                break;
-            default:
-                $sort_url = "arama";
-                break;
-        }
-        return $this->base_url . $sort_url;
-    }
-
-    private function checkAlgorithm($alg, $alg_url)
-    {
-        if ($alg_url == ($this->base_url . 'arama')) {
-            $this->warning_message .= "<span class='warning'>
-                There is no sorting algorithm called '$alg' on the site </span>\n";
-            throw new Exception('Check test algorithm in .feature file');
-        }
-    }
-
-
-    /**
-     * @When /^I fill profile details$/
-     */
-    public function iFillProfileDetails()
-    {
-        $this->mail_message = "<strong class='test_feature'> Profile Detail Feature </strong> ";
-        $this->mailSubject = 'ProfileDetails Report';
-        try {
-            $session = $this->getSession();
-            $page = $session->getPage();
-
-            $page->find('css', '#vitringez_user_profile_form_biography')
-                ->setValue($this->generateRandomString(16));
-            $page->find('css', '#vitringez_user_profile_form_city')
-                ->setValue($this->generateRandomString(7));
-            $page->find('xpath', '//*[@id="vitringez_user_profile_form_newsletterSubscribe"]')
-                ->uncheck();
-
-            $this->mail_message .= "\n<span class='ok'>profile details test ok</span>";
-
-        } catch (Exception $e) {
-            $this->exception_message = $e->getMessage();
-            $this->sendMail();
-            throw new Exception($this->exception_message);
-        }
-    }
-
-    /**
-     * @When /^I scan "([^"]*)" category$/
-     */
-    public function iScanCategory($category)
-    {
-        $session = $this->getSession();
-        $page = $session->getPage();
-
-        $category_url = $this->setUrl($category);
-        $session->visit($category_url);
-
-        $productanno = $page->findById("filterProgressBar")->getText();
-        if ($productanno == null) {
-            $err = "filterProgressBar could not fetched!\n";
-            throw new Exception($err);
-        } else
-            $numofproduct = intval($productanno);
-
-        echo ($category != "all") ? $category . " kategorisinde toplam: " . $numofproduct . " ürün var.\n" :
-            "Sitede toplam: " . $numofproduct . " ürün var.\n";
-
-        $innerDiv = $page->find('xpath', '//*[@id="filterProvider"]/div/div/div');
-        if ($innerDiv == null) {
-            $err = "innerDiv could not fetched!\n";
-            throw new Exception($err);
-        } else
-            $providersdiv = $innerDiv->findAll('css', 'div');
-
-        $totalprovider = count($providersdiv);
-        echo "Provider sayısı: " . $totalprovider . "\n";
-
-        echo ($category != "all") ? "\e[34m" . ucwords(strtolower($category . " Kategorisi\n________________\n")) . "\e[0m" :
-            "\e[34mArama Sayfası\n_____________\n\e[0m";
-
-        for ($i = 1; $i < $totalprovider; $i++) {
-            $pr = $providersdiv[$i]->find('css', 'input');
-            $data_url = $pr->getAttribute("data-url");
-            $provider_name = $pr->getAttribute("data-name");
-            $url = $category_url . "/" . $data_url . "-magazasi";
-            $session->visit($url);
-
-            $subproduct = intval($page->findById("filterProgressBar")->getText());
-            $providers[$provider_name] = $subproduct; // log
-
-            echo ($subproduct <= 0) ? $provider_name . "\033[01;31m de/da ürün yok! \033[0m\n" :
-                $provider_name . "   -> " . $subproduct . " ürün var\n";
-            $session->visit($category_url);
-
-        }
-
-    }
-
-    private function setUrl($category)
-    {
-        switch ($category) {
-            case "kadın":
-                $data_url = "kadin";
-                break;
-            case "erkek":
-                $data_url = "erkek";
-                break;
-            case "çocuk":
-                $data_url = "cocuk";
-                break;
-            case "ev":
-                $data_url = "ev";
-                break;
-            default:
-                $data_url = 'arama';
-                break;
-        }
-        return $this->base_url . $data_url;
-    }
-
-    /**
-     * @When /^I set the discount alert$/
-     */
-    public function iSetTheDiscountAlert()
-    {
-        $session = $this->getSession();
-        $page = $session->getPage();
-
-        $session->visit("http://www.vitringez.com/urun/bisous-rose-metalik-canta-207258");
-        $page->find("xpath", '//*[@id="content"]/div[1]/div/div[2]/a[2]')->click();
-
-        for ($i = 1; $i <= 4; $i++) {
-            $page->find("xpath", '//*[@id="simplemodal-data"]/form/div/label[' . $i . ']/input')->check();
-        }
-        $page->find("xpath", '//*[@id="simplemodal-data"]/form/input[1]')->click();
-
-    }
-
-    /**
-     * @When /^I set the fashion alert$/
-     */
-    public function iSetTheFashionAlert() //ok
-    {
-        $this->mail_message = "<strong class='test_feature'> Fashiın Akert </strong> ";
-        $this->mailSubject = 'FashionnAlert Report';
-        try {
-            $session = $this->getSession();
-            $page = $session->getPage();
-
-            $first_product = $page->find('xpath', '//*[@id="catalogResult"]/div/div/div[3]');
-            if (!is_object($first_product))
-                $this->setException('firstProduct');
-
-            if (!$first_product->hasAttribute('data-uri'))
-                $this->setException('firstProduct_data-uri');
-            $session->visit($first_product->getAttribute('data-uri'));
-
-            $alertbutton = $page->find("xpath", '//*[@id="content"]/div[1]/div/div[2]/a[1]');
-            if (!is_object($alertbutton))
-                $this->setException('alertButtonn');
-            $alertbutton->click();
-
-            for ($i = 1; $i <= 3; $i++) {
-                $alertLabel = $page->find("xpath", '//*[@id="simplemodal-data"]/form/div/label[' . $i . ']/input');
-                if (!is_object($alertLabel))
-                    $this->setException('alertLabel');
-                $alertLabel->check();
-            }
-            $alertInput = $page->find("xpath", '//*[@id="simplemodal-data"]/form/input[1]');
-            if (!is_object($alertInput))
-                $this->setException('alertInput');
-            $alertInput->click(); // send fashion alert request
-
-            $this->mail_message .= "<span class='ok'> 'FashionAlert' set successfully </span>";
-
-        } catch (Exception $e) {
-            $this->exception_message = $e->getMessage();
-            $this->sendMail();
-            throw new Exception($this->exception_message);
-        }
-    }
-
-    private function getFirstProduct($page)
-    {
-
-    }
-
-
-    private function setTime() //ok
-    {
-        $this->now = new DateTime();
-        $this->now->setTimezone(new DateTimeZone('Europe/Istanbul'));
-    }
-
-    private function setException($obj)
-    {
-        $this->exception_message .= "<span class='exception'> __! Check '$obj' path | id | attribute !__ </span>";
-        throw new Exception($this->exception_message);
-    }
-
-
-    /**
-     * @When /^I fill in registration form$/
-     */
-    public function iFillInRegistrationForm() //ok
-    {
-        $this->mail_message = "<strong class='test_feature' style='color: #990000; font-style: oblique'> Register Test </strong>";
-        $this->mailSubject = 'Register Feature Report';
-
-        try {
-            $session = $this->getSession();
-//        $session->getDriver()->resizeWindow(1600,900,'current');
-            $page = $session->getPage();
-
-            $newUserLink = $page->findById("newUserLink");
-            if (!is_object($newUserLink))
-                $this->setException('newUserLink');
-            $newUserLink->click();
-            $session->wait(4000);
-
-            $registerRow = $page->findAll("css", "div.row");
-            if (count($registerRow) == 0)
-                $this->setException('registerRow');
-
-            $divRows = [];
-            for ($i = 0; $i < count($registerRow); $i++) {
-                $dr = $registerRow[$i]->find("css", "input");
-                if (!is_object($dr))
-                    $this->setException('divRow');
-                $divRows[] = $dr;
-            }
-            $this->setDivRows($divRows);
-            $this->mail_message .= "\n<mark class='ok'>Başarılı bir şekilde üye olundu.</mark>";
-
-        } catch (Exception $e) {
-            $this->exception_message = $e->getMessage();
-            $this->sendMail();
-            throw new Exception($this->exception_message);
-        }
-    }
-
-    private function setDivRows($divRows){
-        $divRows[0]->setValue($this->generateRandomString(rand(3, 12)));
-        $divRows[1]->setValue($this->generateRandomString(rand(3, 12)));
-        $divRows[2]->setValue($this->generateRandomString(rand(5, 12)));
-        $divRows[3]->setValue($this->generateRandomEmail());
-        $password = $this->generateRandomString(rand(6, 14));
-        $divRows[4]->setValue($password);
-        $divRows[5]->setValue($password);
-        $userAgreement = $divRows[6]->find("css", "input");
-        if (!is_object($userAgreement))
-            $this->setException('userAgreement');
-        $userAgreement->check();
-
-        $submitForm = $divRows[7]->find("css", "input");
-        if (!is_object($submitForm))
-            $this->setException('submitForm');
-        $submitForm->click();
-    }
-
-
-    /**
-     * @Given /^I wait "([^"]*)" second$/
-     */
-    public function iWaitSecond($duration)
-    {
-        $this->getSession()->wait(intval($duration) * 1000,
-            '(0 === jQuery.active && 0 === jQuery(\':animated\').length)');
-//        $this->getSession()->wait($duration, '(0 === Ajax.activeRequestCount)');
-    }
-
-    public function generateRandomEmail()
-    {
-        return 'bdd_' . $this->generateRandomString() . '@yahoo.com';
-    }
-
-    public function generateRandomString($length = 6)
-    {
-        $characters = 'abcdefghijklmnopqrstuvwxyz';
-        $randomString = '';
-        for ($i = 0; $i < $length; $i++) {
-            $randomString .= $characters[rand(0, strlen($characters) - 1)];
-        }
-        return $randomString;
-    }
 }
+
+
 
 
 

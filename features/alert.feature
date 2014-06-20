@@ -19,6 +19,7 @@ Feature: User sets alarm feature
     And I should not see "Nedeni bilinmeyen bir hata oluştu."
     When I set the fashion alert
     #When I set the discount alert
+    And I sent report mail
 
 
 
