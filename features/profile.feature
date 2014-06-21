@@ -22,6 +22,7 @@ Feature: User profile behaviour test
     Then I press "Güncelle"
     Then I should see "Profiliniz başarıyla güncellendi" in the "#content > div > section > div.alert.alert-success" element
     Then I reload the page
+    And I sent report mail
 
 
 

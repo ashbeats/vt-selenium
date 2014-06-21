@@ -184,22 +184,13 @@ ALT;
     {
         $prices_em = [];
         for ($i = 3; $i < 27; $i++)
-            $prices_em[] = $this->getPricesEm($page, $i);
+            $prices_em = $this->getElement($page, 'css',
+                "#catalogResult > div > div > div:nth-child($i) > div.productDetail > a > span.prices > em.new");
         $prices = [];
         foreach ($prices_em as $d)
             $prices[] = (float)str_replace(",", "", $d->getText());
         return $prices;
     }
-
-    private function getPricesEm($page, $index)
-    {
-        $em = $page->find('css',
-            '#catalogResult > div > div > div:nth-child(' . $index . ') > div.productDetail > a > span.prices > em.new');
-        if (!is_object($em))
-            $this->setException('prices_em-new');
-        return $em;
-    }
-
 
     private function setAlgorithm($alg)
     {
@@ -235,14 +226,13 @@ ALT;
         $this->mail_message = "<strong class='test_feature'> Profile Detail Feature </strong> ";
         $this->mailSubject = 'ProfileDetails Report';
         try {
-            $session = $this->getSession();
-            $page = $session->getPage();
+            $this->initSession();
 
-            $page->find('css', '#vitringez_user_profile_form_biography')
+            $this->page->find('css', '#vitringez_user_profile_form_biography')
                 ->setValue($this->generateRandomString(16));
-            $page->find('css', '#vitringez_user_profile_form_city')
+            $this->page->find('css', '#vitringez_user_profile_form_city')
                 ->setValue($this->generateRandomString(7));
-            $page->find('xpath', '//*[@id="vitringez_user_profile_form_newsletterSubscribe"]')
+            $this->page->find('xpath', '//*[@id="vitringez_user_profile_form_newsletterSubscribe"]')
                 ->uncheck();
 
             $this->mail_message .= "\n<span class='ok'>profile details test ok</span>";
@@ -320,9 +310,7 @@ ALT;
 
     private function setProvidersDiv($page)
     {
-        $innerDiv = $page->find('xpath', '//*[@id="filterProvider"]/div/div/div');
-        if (!is_object($innerDiv))
-            $this->setException('innerDiv');
+        $innerDiv = $this->getElement($page, 'xpath', '//*[@id="filterProvider"]/div/div/div');
         return $innerDiv->findAll('css', 'div');
     }
 
@@ -330,7 +318,6 @@ ALT;
     {
         $this->totalProduct = intval($this->getFilterProgressBar($page));
         $this->totalProvider = count($this->setProvidersDiv($page));
-
     }
 
     private function setGeneralInfo()
@@ -391,12 +378,12 @@ INFO;
         $this->mail_message = "<strong class='test_feature'> Fashiın Akert </strong><br>\n ";
         $this->mailSubject = 'FashionnAlert Report';
         try {
-            $session = $this->getSession();
-            $page = $session->getPage();
-            $session->visit($this->getFirstProduct($page)['data-uri']);
-            $this->getFashionAlertButton($page)->click();
-            $this->checkFashionInput($page);
-            $this->submitFashionAlert($page);
+            $this->initSession();
+            $this->session->visit($this->getFirstProduct($this->page)['data-uri']);
+            $this->getElement($this->page, 'css',
+                '#content > div.productDetail > div > div.productButtons > a.gradient.fashionAlert')->click();
+            $this->checkFashionInputs($this->page);
+            $this->submitFashionAlert($this->page);
             $this->mail_message .= "<span class='ok'> 'FashionAlert' set successfully </span>";
 
         } catch (Exception $e) {
@@ -406,29 +393,19 @@ INFO;
 
     private function submitFashionAlert($page)
     {
-        $alertSubmit = $page->find("xpath", '//*[@id="simplemodal-data"]/form/input[1]');
-        if (!is_object($alertSubmit))
-            $this->setException('alertSubmit');
-        $alertSubmit->click(); // send fashion alert request
+        $this->getElement($page, 'xpath', '//*[@id="simplemodal-data"]/form/input[1]')
+            ->click();
     }
 
-    private function checkFashionInput($page)
+    private function checkFashionInputs($page)
     {
-        for ($i = 1; $i <= 3; $i++) {
-            $alertLabel = $page->find("xpath", '//*[@id="simplemodal-data"]/form/div/label[' . $i . ']/input');
-            if (!is_object($alertLabel))
-                $this->setException('alertLabel');
-            $alertLabel->check();
-        }
+        for ($i = 1; $i <= 3; $i++)
+            $this->getElement($page, 'xpath', '//*[@id="simplemodal-data"]/form/div/label[' . $i . ']/input')
+                ->check();
     }
 
-    private function getFashionAlertButton($page)
-    {
-        $alertButton = $page->find('css', '#content > div.productDetail > div > div.productButtons > a.gradient.fashionAlert');
-        if (!is_object($alertButton))
-            $this->setException('alertButton');
-        return $alertButton;
-    }
+
+
 
     private function getFirstProduct($page)
     {
@@ -479,7 +456,7 @@ INFO;
         }
     }
 
-    private function getRegisterInputs($page)
+/*    private function getRegisterInputs($page)
     {
         $divRows = $this->getRegisterDivRows($page);
         $registerInputs = [];
@@ -501,6 +478,34 @@ INFO;
             if (!is_object($div))
                 $this->setException('registerDiv.Row');
         return $divRows;
+    }*/
+
+    private function getRegisterInputs($page)
+    {
+        $divRows = $this->getElementAll($page,'css','div.row');
+        $registerInputs = [];
+        for ($i = 0; $i < count($divRows); $i++){
+            $ri = $this->getElement(($divRows[$i]), 'css', 'input');
+            $registerInputs[] = $ri;
+        }
+        return $registerInputs;
+    }
+
+    public function getElement($where, $selector, $path)
+    {
+        $elementsAll = $this->getElementAll($where,$selector,$path);
+        return count($elementsAll) ? current($elementsAll) : null;
+    }
+
+    public function getElementAll($where, $selector, $path)
+    {
+        $elementsAll = $where->findAll($selector, $path);
+        if (count($elementsAll) == 0)
+            $this->setException($path);
+        foreach ($elementsAll as $el)
+            if (!is_object($el))
+                $this->setException($path);
+        return $elementsAll;
     }
 
     private function runNewUserLink($page)
@@ -520,17 +525,10 @@ INFO;
         $password = $this->generateRandomString(rand(6, 14));
         $inputs[4]->setValue($password);
         $inputs[5]->setValue($password);
-        $this->getElementInput($inputs[6])->check();
-        $this->getElementInput($inputs[7])->click();
+        $this->getElement($inputs[6], 'css', 'input')->check();
+        $this->getElement($inputs[7], 'css', 'input')->click();
     }
 
-    private function getElementInput($element)
-    {
-        $elementInput = $element->find("css", "input");
-        if (!is_object($elementInput))
-            $this->setException('userAgreement');
-        return $elementInput;
-    }
 
     /**
      * @Given /^I wait "([^"]*)" second$/
