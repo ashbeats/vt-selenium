@@ -16,6 +16,7 @@ class FeatureContext extends MinkContext
     private $totalProduct;
     private $subProduct;
     private $totalProvider;
+    private $totalBrand;
 
     protected $now;
     private $session;
@@ -46,9 +47,6 @@ class FeatureContext extends MinkContext
 
         $mail = new PHPMailer;
         $mail->isSMTP();
-        $mail->SMTPDebug = 0;
-        $mail->SMTPAuth = true;
-        $mail->SMTPSecure = 'ssl';
         $mail->FromName = 'Mustafa Hasturk';
         $mail->addAddress('tzzzf@droplar.com', 'muhasturk');
         $mail->WordWrap = 50;
@@ -59,7 +57,6 @@ class FeatureContext extends MinkContext
 
         echo((!$mail->send()) ? "Message could not be sent.\n 'Mailer Error: ' . $mail->ErrorInfo . \n" :
             "Message has been sent\n");
-
     }
 
     private function setNoProblemStatus()
@@ -119,17 +116,17 @@ ALT;
     }
 
     /**
-     * @Given /^I sent report mail$/
+     * @Given /^I send report mail$/
      */
-    public function iSentReportMail()
+    public function iSendReportMail()
     {
         $this->mailSubject .= "_" . $this->now->getTimestamp();
         $this->sendMail();
     }
 
-    private function getFilterProgressBar($page)
+    private function getFilterProgressBar()
     {
-        $progressBar = $page->findById("filterProgressBar");
+        $progressBar = $this->page->findById("filterProgressBar");
         if (!is_object($progressBar))
             $this->setException('filterProgressBar');
         return $progressBar->getText();
@@ -172,9 +169,8 @@ ALT;
 
     public function getException($exception)
     {
-        $this->exception_message = $exception->getMessage();
-        $this->mailSubject .= "_" . $this->now->getTimestamp();
-        $this->sendMail();
+        $this->exception_message .= "\n" . $exception->getMessage();
+        $this->iSendReportMail();
         throw new Exception($this->exception_message);
     }
 
@@ -216,7 +212,6 @@ ALT;
         }
     }
 
-
     /**
      * @When /^I fill profile details$/
      */
@@ -249,38 +244,56 @@ ALT;
         $this->mailSubject = "ScanCategory Feature";
         try {
             $this->initSession();
-
-            $category_url = $this->setUrl($category);
-            $this->session->visit($category_url);
-
-            $this->setGeneralVariable($this->page);
+            $this->session->visit($this->setUrl($category));
+            $this->setGeneralVariable();
             $this->setGeneralInfo();
-            $this->mail_message = "<div class='providers'>\n";
-
-            $providers = $this->setProvidersDiv();
-            $this->scanProvider($providers, $category_url);
-            $this->mail_message .= "</div>\n";
-
+            $this->scanProviders($this->getProvidersORBrands('providers'));
         } catch (Exception $e) {
             $this->getException($e);
         }
-
-    }
-    public function getElement($selector, $path)
-    {
-        $elementsAll = $this->getElementAll($selector,$path);
-        return count($elementsAll) ? current($elementsAll) : null;
     }
 
-    public function getElementAll($selector, $path)
+    private function scanProviders($providersDiv)
     {
-        $elementsAll = $this->page->findAll($selector, $path);
-        if (count($elementsAll) == 0)
-            $this->setException($path);
-        foreach ($elementsAll as $el)
-            if (!is_object($el))
-                $this->setException($path);
-        return $elementsAll;
+        $this->mail_message .= "<div class='providers'>\n";
+        for ($i = 1; $i < $this->totalProvider; $i++) {
+            $providerDataName = $this->getProviderDataName($providersDiv[$i]);
+            $providerSpan = $providersDiv[$i]->find('css', 'span');
+            $subProductText = $providerSpan->getText();
+            $this->subProduct = intval(str_replace('(', '', $subProductText));
+            $this->mail_message .= "<div class='provider'>'$providerDataName' de/da : {$this->checkSubProduct()}</div>\n";
+        }
+        $this->mail_message .= "</div>\n";
+    }
+
+    private function checkSubProduct()
+    {
+        $sp = "<span class='fail'> ürün yok. </span>";
+        if ($this->subProduct > 0)
+            $sp = "<span class='ok'> '$this->subProduct' ürün var. </span>";
+        return $sp;
+    }
+
+    private function getProviderDataName($provider)
+    {
+        $providerInput = $provider->find('css', 'input');
+        return $providerInput->getAttribute('data-name');
+    }
+
+    private function getProvidersORBrands($what)
+    {
+        switch ($what) {
+            case 'providers':
+                $path = '#filterProvider';
+                break;
+            case 'brands':
+                $path = '#filterBrands';
+                break;
+            default:
+                throw new Exception("getProviderORBrands method only supports providers or brands parameters");
+                break;
+        }
+        return $this->page->find('css', $path . ' > div > div > div')->findAll('css', 'div');
     }
 
     private function setException($obj)
@@ -289,63 +302,20 @@ ALT;
         throw new Exception($this->exception_message);
     }
 
-    private function scanProvider($providers, $category_url)
+    private function setGeneralVariable()
     {
-        for ($i = 1; $i < $this->totalProvider; $i++) {
-            $attr = $this->setSingleProvider($i, $providers, $category_url);
-            $this->session->visit($attr['url']);
-            $this->subProduct = intval($this->getFilterProgressBar($this->page));
-
-            echo ($this->subProduct <= 0) ? $attr['data-name'] . "\033[01;31m de/da ürün yok! \033[0m\n" :
-                $attr['data-name'] . "   -> " . $this->subProduct . " ürün var\n";
-
-            $this->mail_message .= "<span class='provider'>'{$attr['data-name']}' de/da {$this->checkSubProduct()} </span><br>\n";
-            $this->session->visit($category_url);
-
-        }
-    }
-
-    private function checkSubProduct()
-    {
-        $sp = "<span class='fail'> ürün yok.</span>\n";
-        if ($this->subProduct > 0)
-            $sp = "<span class='ok'> '$this->subProduct' ürün var. </span>\n";
-        return $sp;
-    }
-
-    private function setSingleProvider($counter, $providers, $category_url)
-    {
-        $pr = $providers[$counter]->find('css', 'input');
-        if (!is_object($pr))
-            $this->setException('singleProvider-input');
-        if (!$pr->hasAttribute('data-url'))
-            $this->setException('singleProvider-data-url');
-        if (!$pr->hasAttribute('data-name'))
-            $this->setException('singleProvider-data-name');
-
-        return ['data-name' => $pr->getAttribute("data-name"),
-            'data-url' => $pr->getAttribute("data-url"),
-            'url' => $category_url . "/" . $pr->getAttribute("data-url") . "-magazasi"];
-    }
-
-    private function setProvidersDiv()
-    {
-        $innerDiv = $this->page->find('xpath', '//*[@id="filterProvider"]/div/div/div');
-        return $innerDiv->findAll('css', 'div');
-    }
-
-    private function setGeneralVariable($page)
-    {
-        $this->totalProduct = intval($this->getFilterProgressBar($page));
-        $this->totalProvider = count($this->setProvidersDiv($page));
+        $this->totalProduct = intval($this->getFilterProgressBar());
+        $this->totalProvider = count($this->getProvidersORBrands('providers'));
+        $this->totalBrand = count($this->getProvidersORBrands('brands'));
     }
 
     private function setGeneralInfo()
     {
         $this->mail_message .= <<<INFO
         <div id='general'>\n
-        <span class='totalProduct'> Toplam ürün: $this->totalProduct </span><br>\n
-        <span class='totalProvider'> Provider sayısı: $this->totalProvider </span><br>\n
+        <span class='totalProduct'> Toplam ürün: {$this->totalProduct} </span><br>\n
+        <span class='totalProvider'> Provider sayısı: {$this->totalProvider} </span><br>\n
+        <span class='totalBrands'> Brand sayısı:  {$this->totalBrand} </span><br>\n
         </div>\n
 INFO;
     }
@@ -425,8 +395,6 @@ INFO;
     }
 
 
-
-
     private function getFirstProduct($page)
     {
         $firstProduct = $page->find('xpath', '//*[@id="catalogResult"]/div/div/div[4]');
@@ -445,7 +413,6 @@ INFO;
         $this->now = new DateTime();
         $this->now->setTimezone(new DateTimeZone('Europe/Istanbul'));
     }
-
 
 
     /**
@@ -471,35 +438,35 @@ INFO;
         }
     }
 
-/*    private function getRegisterInputs($page)
-    {
-        $divRows = $this->getRegisterDivRows($page);
-        $registerInputs = [];
-        for ($i = 0; $i < count($divRows); $i++) {
-            $ri = $divRows[$i]->find("css", "input");
-            if (!is_object($ri))
-                $this->setException('registerDiv.Row > input');
-            $registerInputs[] = $ri;
+    /*    private function getRegisterInputs($page)
+        {
+            $divRows = $this->getRegisterDivRows($page);
+            $registerInputs = [];
+            for ($i = 0; $i < count($divRows); $i++) {
+                $ri = $divRows[$i]->find("css", "input");
+                if (!is_object($ri))
+                    $this->setException('registerDiv.Row > input');
+                $registerInputs[] = $ri;
+            }
+            return $registerInputs;
         }
-        return $registerInputs;
-    }
 
-    private function getRegisterDivRows($page)
-    {
-        $divRows = $page->findAll("css", "div.row");
-        if (count($divRows) == 0)
-            $this->setException('divRows');
-        foreach ($divRows as $div)
-            if (!is_object($div))
-                $this->setException('registerDiv.Row');
-        return $divRows;
-    }*/
+        private function getRegisterDivRows($page)
+        {
+            $divRows = $page->findAll("css", "div.row");
+            if (count($divRows) == 0)
+                $this->setException('divRows');
+            foreach ($divRows as $div)
+                if (!is_object($div))
+                    $this->setException('registerDiv.Row');
+            return $divRows;
+        }*/
 
     private function getRegisterInputs($page)
     {
-        $divRows = $this->getElementAll($page,'css','div.row');
+        $divRows = $this->getElementAll($page, 'css', 'div.row');
         $registerInputs = [];
-        for ($i = 0; $i < count($divRows); $i++){
+        for ($i = 0; $i < count($divRows); $i++) {
             $ri = $this->getElement(($divRows[$i]), 'css', 'input');
             $registerInputs[] = $ri;
         }

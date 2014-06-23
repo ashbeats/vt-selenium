@@ -10,7 +10,7 @@ Feature: Scan all vitringez categories
 #    When I scan "erkek" category
 #    When I scan "çocuk" category
 #    When I scan "ev" category
-    And I sent report mail
+    And I send report mail
 
 
 
