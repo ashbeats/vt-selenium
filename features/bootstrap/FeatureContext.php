@@ -140,9 +140,9 @@ ALT;
         $this->mailSubject = 'SortPrice Feature';
         try {
             $this->initSession();
-            $algorithm_url = $this->setAlgorithm($alg);
-            $this->checkAlgorithm($alg, $algorithm_url);
-            $this->session->visit($algorithm_url);
+            $url = $this->setAlgorithm($alg);
+            $this->checkAlgorithm($alg, $url);
+            $this->session->visit($url);
             $this->getSortAlgorithmResult($this->comparePrices($alg, $this->page), $alg);
         } catch (Exception $e) {
             $this->getException($e);
@@ -158,9 +158,9 @@ ALT;
             "'$algorithm' algorithm has a problem!\e[0m\n";
     }
 
-    private function comparePrices($alg, $page)
+    private function comparePrices($alg)
     {
-        $prices = $this->getPrices($page);
+        $prices = $this->getPrices();
         $sorted = $prices;
         $alg == "descending" ? arsort($sorted) : asort($sorted);
         return boolval($sorted == $prices);
@@ -175,11 +175,11 @@ ALT;
     }
 
 
-    private function getPrices($page)
+    private function getPrices()
     {
         $prices_em = [];
         for ($i = 3; $i < 27; $i++)
-            $prices_em = $this->getElement($page, 'css',
+            $prices_em = $this->page->find('css',
                 "#catalogResult > div > div > div:nth-child($i) > div.productDetail > a > span.prices > em.new");
         $prices = [];
         foreach ($prices_em as $d)
@@ -203,11 +203,12 @@ ALT;
         return $this->base_url . $sort_url;
     }
 
-    private function checkAlgorithm($alg, $alg_url)
+    private function checkAlgorithm($alg, $url)
     {
-        if ($alg_url == ($this->base_url . 'arama')) {
+        if ($url == ($this->base_url . 'arama')) {
             $this->warning_message .= "<span class='warning'>
-                There is no sorting algorithm called '$alg' on the site </span>\n";
+                There is no sorting algorithm called '$alg' on the site <br>
+                Check test algorithm in .feature file </span>\n";
             throw new Exception('Check test algorithm in .feature file');
         }
     }
@@ -241,7 +242,7 @@ ALT;
      */
     public function iScanCategory($category)
     {
-        $this->mailSubject = "ScanCategory Feature";
+        $this->mailSubject = "ScanCategory Report";
         try {
             $this->initSession();
             $this->session->visit($this->setUrl($category));
