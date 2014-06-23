@@ -370,7 +370,7 @@ INFO;
         try {
             $this->initSession();
             $this->session->visit($this->getFirstProduct($this->page)['data-uri']);
-            $this->page->find('css','#content > div.productDetail > div > div.productButtons > a.gradient.fashionAlert')
+            $this->page->find('css', '#content > div.productDetail > div > div.productButtons > a.gradient.fashionAlert')
                 ->click();
             $this->checkFashionInputs();
             $this->submitFashionAlert();
@@ -423,12 +423,10 @@ INFO;
         $this->mailSubject = 'Register Feature Report';
 
         try {
-            $session = $this->getSession();
-            $page = $session->getPage();
-            $this->runNewUserLink($page);
+            $this->initSession();
+            $this->runNewUserLink();
             $this->iWaitSecond("3");
-            $registerInputs = $this->getRegisterInputs($page);
-            $this->setRegisterInputs($registerInputs);
+            $this->setRegisterInputs( $this->getRegisterInputs() );
 
             $this->mail_message .= "\n<mark class='ok'>Başarılı bir şekilde üye olundu.</mark>";
 
@@ -461,21 +459,18 @@ INFO;
             return $divRows;
         }*/
 
-    private function getRegisterInputs($page)
+    private function getRegisterInputs()
     {
-        $divRows = $this->getElementAll($page, 'css', 'div.row');
+        $divRows = $this->page->findAll('css', 'div.row');
         $registerInputs = [];
-        for ($i = 0; $i < count($divRows); $i++) {
-            $ri = $this->getElement(($divRows[$i]), 'css', 'input');
-            $registerInputs[] = $ri;
-        }
+        for ($i = 0; $i < count($divRows); $i++)
+            $registerInputs[] = $divRows[$i]->find('css', 'input');
         return $registerInputs;
     }
 
-
-    private function runNewUserLink($page)
+    private function runNewUserLink()
     {
-        $newUserLink = $page->findById("newUserLink");
+        $newUserLink = $this->page->findById("newUserLink");
         if (!is_object($newUserLink))
             $this->setException('newUserLink');
         $newUserLink->click();
@@ -490,8 +485,8 @@ INFO;
         $password = $this->generateRandomString(rand(6, 14));
         $inputs[4]->setValue($password);
         $inputs[5]->setValue($password);
-        $this->getElement($inputs[6], 'css', 'input')->check();
-        $this->getElement($inputs[7], 'css', 'input')->click();
+        $inputs[6]->find('css', 'input')->check();
+        $inputs[7]->find('css', 'input')->click();
     }
 
 
@@ -709,7 +704,8 @@ INFO;
     }
 
 
-    private function getRandBrand($brands) //ok
+    private
+    function getRandBrand($brands) //ok
     {
         $brand = $brands[rand(0, (count($brands) - 1))];
         $brand_input = $brand->find("css", "input");
@@ -727,7 +723,8 @@ INFO;
         return $attr;
     }
 
-    private function getRandColor($colors) //ok
+    private
+    function getRandColor($colors) //ok
     {
         $color = $colors[rand(0, (count($colors) - 1))];
         $attr = [];

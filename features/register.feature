@@ -10,9 +10,9 @@ Feature: register feature
     And I follow "loginRegisterButton"
     And I wait "2" second
     When I fill in registration form
-    Then I wait "2" second
-#    Then I should see "Hesabım"
-    And I sent report mail
+    Then I wait "1" second
+    Then I should see "Hesabım"
+    And I send report mail
 
 
 
