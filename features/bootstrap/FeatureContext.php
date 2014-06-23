@@ -166,8 +166,7 @@ ALT;
         $prices = $this->getPrices($page);
         $sorted = $prices;
         $alg == "descending" ? arsort($sorted) : asort($sorted);
-        $cond = boolval($sorted == $prices);
-        return $cond;
+        return boolval($sorted == $prices);
     }
 
 
@@ -249,18 +248,17 @@ ALT;
     {
         $this->mailSubject = "ScanCategory Feature";
         try {
-            $session = $this->getSession();
-            $page = $session->getPage();
+            $this->initSession();
 
             $category_url = $this->setUrl($category);
-            $session->visit($category_url);
+            $this->session->visit($category_url);
 
-            $this->setGeneralVariable($page);
+            $this->setGeneralVariable($this->page);
             $this->setGeneralInfo();
             $this->mail_message = "<div class='providers'>\n";
 
-            $providers = $this->setProvidersDiv($page);
-            $this->scanProvider($page, $session, $providers, $category_url);
+            $providers = $this->setProvidersDiv();
+            $this->scanProvider($providers, $category_url);
             $this->mail_message .= "</div>\n";
 
         } catch (Exception $e) {
@@ -268,19 +266,41 @@ ALT;
         }
 
     }
+    public function getElement($selector, $path)
+    {
+        $elementsAll = $this->getElementAll($selector,$path);
+        return count($elementsAll) ? current($elementsAll) : null;
+    }
 
-    private function scanProvider($page, $session, $providers, $category_url)
+    public function getElementAll($selector, $path)
+    {
+        $elementsAll = $this->page->findAll($selector, $path);
+        if (count($elementsAll) == 0)
+            $this->setException($path);
+        foreach ($elementsAll as $el)
+            if (!is_object($el))
+                $this->setException($path);
+        return $elementsAll;
+    }
+
+    private function setException($obj)
+    {
+        $this->exception_message .= "<span class='exception'> __! Check '$obj' path | id | attribute !__ </span>";
+        throw new Exception($this->exception_message);
+    }
+
+    private function scanProvider($providers, $category_url)
     {
         for ($i = 1; $i < $this->totalProvider; $i++) {
             $attr = $this->setSingleProvider($i, $providers, $category_url);
-            $session->visit($attr['url']);
-            $this->subProduct = intval($this->getFilterProgressBar($page));
+            $this->session->visit($attr['url']);
+            $this->subProduct = intval($this->getFilterProgressBar($this->page));
 
             echo ($this->subProduct <= 0) ? $attr['data-name'] . "\033[01;31m de/da ürün yok! \033[0m\n" :
                 $attr['data-name'] . "   -> " . $this->subProduct . " ürün var\n";
 
             $this->mail_message .= "<span class='provider'>'{$attr['data-name']}' de/da {$this->checkSubProduct()} </span><br>\n";
-            $session->visit($category_url);
+            $this->session->visit($category_url);
 
         }
     }
@@ -308,9 +328,9 @@ ALT;
             'url' => $category_url . "/" . $pr->getAttribute("data-url") . "-magazasi"];
     }
 
-    private function setProvidersDiv($page)
+    private function setProvidersDiv()
     {
-        $innerDiv = $this->getElement($page, 'xpath', '//*[@id="filterProvider"]/div/div/div');
+        $innerDiv = $this->page->find('xpath', '//*[@id="filterProvider"]/div/div/div');
         return $innerDiv->findAll('css', 'div');
     }
 
@@ -426,11 +446,6 @@ INFO;
         $this->now->setTimezone(new DateTimeZone('Europe/Istanbul'));
     }
 
-    private function setException($obj)
-    {
-        $this->exception_message .= "<span class='exception'> __! Check '$obj' path | id | attribute !__ </span>";
-        throw new Exception($this->exception_message);
-    }
 
 
     /**
@@ -491,22 +506,6 @@ INFO;
         return $registerInputs;
     }
 
-    public function getElement($where, $selector, $path)
-    {
-        $elementsAll = $this->getElementAll($where,$selector,$path);
-        return count($elementsAll) ? current($elementsAll) : null;
-    }
-
-    public function getElementAll($where, $selector, $path)
-    {
-        $elementsAll = $where->findAll($selector, $path);
-        if (count($elementsAll) == 0)
-            $this->setException($path);
-        foreach ($elementsAll as $el)
-            if (!is_object($el))
-                $this->setException($path);
-        return $elementsAll;
-    }
 
     private function runNewUserLink($page)
     {
