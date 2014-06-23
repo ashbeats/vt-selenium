@@ -294,7 +294,6 @@ ALT;
                 break;
             default:
                 throw new Exception("getProviderORBrands method only supports providers or brands parameters");
-                break;
         }
         return $this->page->find('css', $path . ' > div > div > div')->findAll('css', 'div');
     }
@@ -438,30 +437,6 @@ INFO;
         }
     }
 
-    /*    private function getRegisterInputs($page)
-        {
-            $divRows = $this->getRegisterDivRows($page);
-            $registerInputs = [];
-            for ($i = 0; $i < count($divRows); $i++) {
-                $ri = $divRows[$i]->find("css", "input");
-                if (!is_object($ri))
-                    $this->setException('registerDiv.Row > input');
-                $registerInputs[] = $ri;
-            }
-            return $registerInputs;
-        }
-
-        private function getRegisterDivRows($page)
-        {
-            $divRows = $page->findAll("css", "div.row");
-            if (count($divRows) == 0)
-                $this->setException('divRows');
-            foreach ($divRows as $div)
-                if (!is_object($div))
-                    $this->setException('registerDiv.Row');
-            return $divRows;
-        }*/
-
     private function getRegisterInputs()
     {
         $divRows = $this->page->findAll('css', 'div.row');
@@ -521,50 +496,26 @@ INFO;
     public function iMixSomeFilter()
     {
         $this->mailSubject = 'MixFuture Report';
-
         try {
-            $session = $this->getSession();
-            $page = $session->getPage();
+            $this->initSession();
+            $this->setGeneralVariable();
+            $this->setGeneralInfo();
 
-            echo "\e[31m===========\nGenel Site\n===========\n\e[0m";
-            $this->mail_message .= "<h1 style=\"color:#CB0C0C;\">Genel Site</h2><br>\n";
+            $providers = $this->getProvidersORBrands('providers');
+            $brands = $this->getProvidersORBrands('brands');
 
-            $providers_container = $page->find("css", "#filterProvider > div > div > div");
-            if (!is_object($providers_container))
-                $this->setException('providers_container');
-
-
-            $providers = $providers_container->findAll("css", "div");
-            if (count($providers) == 0)
-                $this->setException('providers');
-
-            $total_providers = count($providers);
-            echo "Provider sayısı: <" . $total_providers . ">\n";
-            $this->mail_message .= "<div id='generalinfo'>\n<span>Provider sayısı: \"" . $total_providers . "\"</span><br>\n";
-
-            $brands_container = $page->find('css', '#filterBrands > div > div > div');
-            if (!is_object($brands_container))
-                $this->setException('brand_container');
-
-            $brands = $brands_container->findAll('css', 'div');
-            $total_brand = count($brands);
-            if ($total_brand == 0) {
+            if ($this->totalBrand == 0) {
                 $this->exception_message .= "<span class='exception'>__! Check brands path or there is no brand on site !__\n</span>";
-                throw new Exception($this->exception_message);
-            }
-            echo "Brand sayısı: <" . $total_brand . ">\n";
+                throw new Exception($this->exception_message);            }
 
-            $total_product = intval($this->getFilterProgressBar($page));
-            if ($total_product == 0) {
+
+            if ($this->totalProduct == 0) {
                 $this->exception_message .= "<span class='exception'>__! There is no product on site !__\n</span>";
                 throw new Exception($this->exception_message);
             }
-            echo "Toplam ürün: <$total_product> \n\n";
+            echo "Provider sayısı: <$this->totalProvider>\n Brand sayısı: <$this->totalBrand>\nToplam ürün: $this->totalProduct \n\n";
 
-            $this->mail_message .= "<span> Brand sayısı:  '$total_brand' </span><br>\n
-                <span> Toplam ürün:  '$total_product' </span><br>\n</div>\n";
-
-            $colors_container = $page->find('css', '#filterColors > div > div > div > ul');
+            $colors_container = $this->page->find('css', '#filterColors > div > div > div > ul');
             if (!is_object($colors_container))
                 $this->setException('color_container');
             $colors = $colors_container->findAll('css', 'li');
