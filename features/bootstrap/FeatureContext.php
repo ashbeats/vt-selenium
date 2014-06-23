@@ -370,34 +370,33 @@ INFO;
         try {
             $this->initSession();
             $this->session->visit($this->getFirstProduct($this->page)['data-uri']);
-            $this->getElement($this->page, 'css',
-                '#content > div.productDetail > div > div.productButtons > a.gradient.fashionAlert')->click();
-            $this->checkFashionInputs($this->page);
-            $this->submitFashionAlert($this->page);
+            $this->page->find('css','#content > div.productDetail > div > div.productButtons > a.gradient.fashionAlert')
+                ->click();
+            $this->checkFashionInputs();
+            $this->submitFashionAlert();
             $this->mail_message .= "<span class='ok'> 'FashionAlert' set successfully </span>";
-
         } catch (Exception $e) {
             $this->getException($e);
         }
     }
 
-    private function submitFashionAlert($page)
+    private function submitFashionAlert()
     {
-        $this->getElement($page, 'xpath', '//*[@id="simplemodal-data"]/form/input[1]')
+        $this->page->find('xpath', '//*[@id="simplemodal-data"]/form/input[1]')
             ->click();
     }
 
-    private function checkFashionInputs($page)
+    private function checkFashionInputs()
     {
         for ($i = 1; $i <= 3; $i++)
-            $this->getElement($page, 'xpath', '//*[@id="simplemodal-data"]/form/div/label[' . $i . ']/input')
+            $this->page->find('xpath', '//*[@id="simplemodal-data"]/form/div/label[' . $i . ']/input')
                 ->check();
     }
 
 
-    private function getFirstProduct($page)
+    private function getFirstProduct()
     {
-        $firstProduct = $page->find('xpath', '//*[@id="catalogResult"]/div/div/div[4]');
+        $firstProduct = $this->page->find('xpath', '//*[@id="catalogResult"]/div/div/div[4]');
         if (!is_object($firstProduct))
             $this->setException('firstProduct');
 

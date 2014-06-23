@@ -16,10 +16,9 @@ Feature: User sets alarm feature
     Then I should see "Hesabım"
 
     When I go to "/arama"
-    And I should not see "Nedeni bilinmeyen bir hata oluştu."
     When I set the fashion alert
     #When I set the discount alert
-    And I sent report mail
+    And I send report mail
 
 
 
