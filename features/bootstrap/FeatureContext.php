@@ -143,7 +143,8 @@ ALT;
             $url = $this->setAlgorithm($alg);
             $this->checkAlgorithm($alg, $url);
             $this->session->visit($url);
-            $this->getSortAlgorithmResult($this->comparePrices($alg, $this->page), $alg);
+            $cond = $this->comparePrices($alg);
+            $this->getSortAlgorithmResult($cond, $alg);
         } catch (Exception $e) {
             $this->getException($e);
         }
@@ -179,6 +180,7 @@ ALT;
     {
         $prices_em = [];
         for ($i = 3; $i < 27; $i++)
+            /** @var array $prices_em */
             $prices_em = $this->page->find('css',
                 "#catalogResult > div > div > div:nth-child($i) > div.productDetail > a > span.prices > em.new");
         $prices = [];
