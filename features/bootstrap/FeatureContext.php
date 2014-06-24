@@ -507,6 +507,24 @@ INFO;
         return $attr;
     }
 
+    private function getRandBrand($brands) //ok
+    {
+        $brand = $brands[rand(0, (count($brands) - 1))];
+        $brandInput = $brand->find("css", "input");
+        if (!is_object($brandInput))
+            throw new Exception('brandsInput');
+        $attr = [];
+        if (!$brandInput->hasAttribute('data-name'))
+            throw new Exception('brand_data-name');
+        if (!$brandInput->hasAttribute('data-url'))
+            throw new Exception('brand_data-url');
+        $attr['data-name'] = $brandInput->getAttribute("data-name");
+        $attr['data-url'] = $brandInput->getAttribute("data-url");
+        $attr['url'] = $attr['data-url'] . "-modelleri/";
+        return $attr;
+    }
+
+
     public function visitColorFilter()
     {
         $colors = $this->getFields('li', '#filterColors > div > div > div > ul');
@@ -535,10 +553,10 @@ INFO;
     public function getFields($tag, $path)
     {
         $container = $this->page->find('css', $path);
-        if(!is_object($container))
+        if (!is_object($container))
             throw new Exception($path);
         $fields = $container->findAll('css', $tag);
-        if(count($fields) <= 0)
+        if (count($fields) <= 0)
             throw new Exception($tag);
         return $fields;
     }
@@ -566,7 +584,7 @@ INFO;
 
     public function visitPriceFilter()
     {
-        $ranges = $this->getRanges($this->getFields('input','#filterPrice > div > div.range-slider-input'));
+        $ranges = $this->getRanges($this->getFields('input', '#filterPrice > div > div.range-slider-input'));
         list($color1, $color2) = $this->getTwoColor();
         $minPrice = rand($ranges['min'], $ranges['max']);
         $maxPrice = rand($minPrice, $ranges['max']);
@@ -598,6 +616,34 @@ INFO;
         $this->mail_message .= "<span> '{$brandAttr['data-name']}' seçili iken: '$this->subProduct' ürün var.</span><br>\n";
     }
 
+    public function getTwoBrand()
+    {
+        $brands = $this->getProvidersORBrands('brands');
+        $brand1 = $this->getRandBrand($brands);
+        $brand2 = $this->getRandBrand($brands);
+        return [$brand1, $brand2];
+    }
+
+    public function visitMoreBrandFilter()
+    {
+        list($brand1, $brand2) = $this->getTwoBrand();
+        $this->session->visit($this->base_url . $brand1['data-url'] . "-ve-" . $brand2['url']);
+        $this->subProduct = intval($this->getFilterProgressBar());
+
+        echo "\"" . $brand1['data-name'] . "\" ve \"" . $brand2['data-name'] . "\" seçili iken: <" .
+            $this->subProduct . "> ürün var.\n";
+        $this->mail_message .= "<span>\"" . $brand1['data-name'] . "\" ve \"" . $brand2['data-name'] . "\" seçili iken \"" .
+            $this->subProduct . "\" ürün var.</span><br>\n";
+    }
+
+    public function callVisitMethods()
+    {
+        $this->visitColorFilter();
+        $this->visitMoreColorFilter();
+        $this->visitPriceFilter();
+        $this->visitBrandFilter();
+        $this->visitMoreBrandFilter();
+    }
 
     /**
      * @Then /^I mix some filter$/
@@ -610,25 +656,10 @@ INFO;
             $this->setGeneralVariable();
             $this->setGeneralInfo();
 
-            $providers = $this->getProvidersORBrands('providers');
             echo "Provider sayısı: <$this->totalProvider>\nBrand sayısı: <$this->totalBrand>\nToplam ürün: $this->totalProduct \n\n";
+            $this->callVisitMethods();
 
-            $this->visitColorFilter();
-            $this->visitMoreColorFilter();
-            $this->visitPriceFilter();
-            $this->visitBrandFilter();
-
-            /*            // more than one brand
-                        $brand1 = $this->getRandBrand($brands);
-                        $brand2 = $this->getRandBrand($brands);
-
-                        $session->visit($this->base_url . $brand1['data-url'] . "-ve-" . $brand2['url']);
-                        $product = intval($this->getFilterProgressBar($page));
-                        echo "\"" . $brand1['data-name'] . "\" ve \"" . $brand2['data-name'] . "\" seçili iken: <" .
-                            $product . "> ürün var.\n";
-                        $this->mail_message .= "<span>\"" . $brand1['data-name'] . "\" ve \"" . $brand2['data-name'] . "\" seçili iken \"" .
-                            $product . "\" ürün var.</span><br>\n";
-
+            /*
                         // brand + provider
                         $session->visit($this->base_url . "arama/");
                         $brand_attr = $this->getRandBrand($brands);
@@ -682,25 +713,7 @@ INFO;
     }
 
 
-    private function getRandBrand($brands) //ok
-    {
-        $brand = $brands[rand(0, (count($brands) - 1))];
-        $brandInput = $brand->find("css", "input");
-        if (!is_object($brandInput))
-            throw new Exception('brandsInput');
-        $attr = [];
-        if (!$brandInput->hasAttribute('data-name'))
-            throw new Exception('brand_data-name');
-        if (!$brandInput->hasAttribute('data-url'))
-            throw new Exception('brand_data-url');
-        $attr['data-name'] = $brandInput->getAttribute("data-name");
-        $attr['data-url'] = $brandInput->getAttribute("data-url");
-        $attr['url'] = $attr['data-url'] . "-modelleri/";
-        return $attr;
-    }
-
 }
-
 
 
 
