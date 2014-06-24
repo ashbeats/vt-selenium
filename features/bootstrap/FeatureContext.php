@@ -371,7 +371,7 @@ INFO;
         $this->mailSubject = 'FashionnAlert Report';
         try {
             $this->initSession();
-            $this->session->visit($this->getFirstProduct($this->page)['data-uri']);
+            $this->session->visit($this->getXProduct(1)['data-uri']);
             $this->page->find('css', '#content > div.productDetail > div > div.productButtons > a.gradient.fashionAlert')
                 ->click();
             $this->checkFashionInputs();
@@ -396,9 +396,11 @@ INFO;
     }
 
 
-    private function getFirstProduct()
+    private function getXProduct($index)
     {
-        $firstProduct = $this->page->find('xpath', '//*[@id="catalogResult"]/div/div/div[4]');
+        $index +=3;
+        $firstProduct = $this->page->find('xpath', "//*[@id='catalogResult']/div/div/div[$index]");
+
         if (!is_object($firstProduct))
             $this->setException('firstProduct');
 
