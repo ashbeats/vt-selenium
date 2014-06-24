@@ -295,7 +295,15 @@ ALT;
             default:
                 throw new Exception("getProviderORBrands method only supports providers or brands parameters");
         }
-        return $this->page->find('css', $path . ' > div > div > div')->findAll('css', 'div');
+        $obj = $this->page->find('css', $path . ' > div > div > div')->findAll('css', 'div');
+        $this->checkProvidersORBrands($obj);
+        return $obj;
+    }
+
+    private function checkProvidersORBrands($what)
+    {
+        if(count($what) <=0)
+            throw new Exception("There is no providers | brands on site");
     }
 
     private function setException($obj)
@@ -431,7 +439,6 @@ INFO;
             $this->runNewUserLink();
             $this->iWaitSecond("3");
             $this->setRegisterInputs( $this->getRegisterInputs() );
-
             $this->mail_message .= "\n<mark class='ok'>Başarılı bir şekilde üye olundu.</mark>";
 
         } catch (Exception $e) {
