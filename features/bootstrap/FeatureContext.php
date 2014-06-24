@@ -302,7 +302,7 @@ ALT;
 
     private function checkProvidersORBrands($what)
     {
-        if(count($what) <=0)
+        if (count($what) <= 0)
             throw new Exception("There is no providers | brands on site");
     }
 
@@ -400,7 +400,7 @@ INFO;
 
     private function getXProduct($index)
     {
-        $index +=3;
+        $index += 3;
         $firstProduct = $this->page->find('xpath', "//*[@id='catalogResult']/div/div/div[$index]");
 
         if (!is_object($firstProduct))
@@ -432,7 +432,7 @@ INFO;
             $this->initSession();
             $this->runNewUserLink();
             $this->iWaitSecond("3");
-            $this->setRegisterInputs( $this->getRegisterInputs() );
+            $this->setRegisterInputs($this->getRegisterInputs());
             $this->mail_message .= "\n<mark class='ok'>Başarılı bir şekilde üye olundu.</mark>";
 
         } catch (Exception $e) {
@@ -496,6 +496,59 @@ INFO;
         return $randomString;
     }
 
+    public function getColors()
+    {
+        $colorsContainer = $this->page->find('css', '#filterColors > div > div > div > ul');
+        if (!is_object($colorsContainer))
+            throw new Exception('color_container');
+        $colors = $colorsContainer->findAll('css', 'li');
+        if (count($colors) <= 0)
+            throw new Exception('there is no colors on site');
+        return $colors;
+    }
+
+    private function getRandColor($colors) //ok
+    {
+        $color = $colors[rand(0, (count($colors) - 1))];
+        $attr = [];
+        if (!$color->hasAttribute('data-name'))
+            throw new Exception('color-data-name');
+        if (!$color->hasAttribute('data-key'))
+            throw new Exception('color-data-key');
+        $attr['data-name'] = $color->getAttribute("data-name");
+        $attr['data-key'] = $color->getAttribute("data-key");
+        $attr['url'] = $attr['data-key'] . "-renkli";
+        return $attr;
+    }
+
+    public function visitColorFilter()
+    {
+        $colors = $this->getColors();
+        $acolor = $this->getRandColor($colors);
+        $this->session->visit($this->base_url . $acolor['url']);
+        echo "\e[34m=============\nRenk Filtresi\n=============\n\e[0m";
+        $this->mail_message .= "\n<h2 id='colorfilter'> Renk Filtresi </h2>\n";
+
+        $this->subProduct = intval($this->getFilterProgressBar());
+        echo "'{$acolor['data-name']}' seçili iken <$this->subProduct> ürün var.\n";
+        $this->mail_message .= "<span> '{$acolor['data-name']}' seçili iken '$this->subProduct' ürün var.</span>\n";
+    }
+
+    public function visitMoreColorFilter()
+    {
+        $colors = $this->getColors();
+        $color1 = $this->getRandColor($colors);
+        $color2 = $this->getRandColor($colors);
+        $this->session->visit($this->base_url . $color1['data-key'] . "-ve-" . $color2['data-key'] . "-renkli");
+        $this->subProduct = intval(($this->getFilterProgressBar()));
+        echo "\"" . $color1['data-name'] . "\" ve \"" . $color2['data-name'] . "\" seçili iken <" .
+            $this->subProduct . "> ürün var.\n\n";
+        $this->mail_message .= "<span>\"" . $color1['data-name'] . "\" ve \"" . $color2['data-name'] . "\" seçili iken \"" .
+            $this->subProduct . "\" ürün var.</span><br>\n\n";
+    }
+    /**
+     * @Then /^I mix some filter$/
+     */
     public function iMixSomeFilter()
     {
         $this->mailSubject = 'MixFuture Report';
@@ -506,48 +559,13 @@ INFO;
 
             $providers = $this->getProvidersORBrands('providers');
             $brands = $this->getProvidersORBrands('brands');
+            echo "Provider sayısı: <$this->totalProvider>\nBrand sayısı: <$this->totalBrand>\nToplam ürün: $this->totalProduct \n\n";
 
-            if ($this->totalBrand == 0) {
-                $this->exception_message .= "<span class='exception'>__! Check brands path or there is no brand on site !__\n</span>";
-                throw new Exception($this->exception_message);            }
-
-
-            if ($this->totalProduct == 0) {
-                $this->exception_message .= "<span class='exception'>__! There is no product on site !__\n</span>";
-                throw new Exception($this->exception_message);
-            }
-            echo "Provider sayısı: <$this->totalProvider>\n Brand sayısı: <$this->totalBrand>\nToplam ürün: $this->totalProduct \n\n";
-
-            $colors_container = $this->page->find('css', '#filterColors > div > div > div > ul');
-            if (!is_object($colors_container))
-                $this->setException('color_container');
-            $colors = $colors_container->findAll('css', 'li');
-            if (count($colors) == 0) {
-                $this->exception_message .= "<span class='exception'>__! There is no color on site or check path !__\n</span>";
-                throw new Exception($this->exception_message);
-            }
-            // one color
-            $acolor = $this->getRandColor($colors);
-            $session->visit($this->base_url . $acolor['url']);
-
-            echo "\e[34m=============\nRenk Filtresi\n=============\n\e[0m";
-            $this->mail_message .= "\n<h2 id='colorfilter'> Renk Filtresi </h2>\n";
-
-            $product = intval($this->getFilterProgressBar($page));
-            echo "'{$acolor['data-name']}' seçili iken <$product> ürün var.\n";
-            $this->mail_message .= "<span> '{$acolor['data-name']}' seçili iken '$product' ürün var.</span>\n";
+            // a color
+            $this->visitColorFilter();
 
             // more than one color
-            $color1 = $this->getRandColor($colors);
-            $color2 = $this->getRandColor($colors);
-            $session->visit($this->base_url . $color1['data-key'] . "-ve-" . $color2['data-key'] . "-renkli");
-
-            $product = intval(($this->getFilterProgressBar($page)));
-
-            echo "\"" . $color1['data-name'] . "\" ve \"" . $color2['data-name'] . "\" seçili iken <" .
-                $product . "> ürün var.\n\n";
-            $this->mail_message .= "<span>\"" . $color1['data-name'] . "\" ve \"" . $color2['data-name'] . "\" seçili iken \"" .
-                $product . "\" ürün var.</span><br>\n\n";
+            $this->visitMoreColorFilter();
 
             // price filter
             $color1 = $this->getRandColor($colors);
@@ -556,16 +574,16 @@ INFO;
 
             $range_div = $page->find('css', '#filterPrice > div > div.range-slider-input');
             if (!is_object($range_div))
-                $this->setException('rangeDiv');
+                throw new Exception('rangeDiv');
             $range_inputs = $range_div->findAll('css', 'input');
             if (count($range_inputs) == 0)
-                $this->setException('randeInputs');
+                throw new Exception('randeInputs');
 
             if (!$range_inputs[0]->hasAttribute('value'))
-                $this->setException('ranndeMin');
+                throw new Exception('ranndeMin');
             $range_min = $range_inputs[0]->getAttribute('value');
             if (!$range_inputs[1]->hasAttribute('value'))
-                $this->setException('rangeMax');
+                throw new Exception('rangeMax');
             $range_max = $range_inputs[1]->getAttribute('value');
 
             $min_price = rand($range_min, $range_max);
@@ -613,28 +631,28 @@ INFO;
             $brand_attr = $this->getRandBrand($brands);
             $prov_cont = $page->find("css", "#filterProvider > div > div > div");
             if (!is_object($prov_cont))
-                $this->setException('providerContainer');
+                throw new Exception('providerContainer');
             $providers = $prov_cont->findAll("css", "div");
             if (count($providers) == 0)
-                $this->setException('providers');
+                throw new Exception('providers');
 
 //            $fl_provider_name = $fl_provider_url = '';
             for ($i = 0; $i < count($providers); $i++) {
                 $provider_span = $providers[$i]->find('css', 'span');
                 if (!is_object($provider_span))
-                    $this->setException('providerSpan');
+                    throw new Exception('providerSpan');
 
                 if (intval(str_replace("(", "", ($provider_span->getText())))) { // higher zero
                     $provider_input = $providers[$i]->find('css', 'input');
                     if (!is_object($provider_input))
-                        $this->setException('providerInput');
+                        throw new Exception('providerInput');
 
                     if (!($provider_input->hasAttribute("data-url")))
-                        $this->setException('providerInput_data-url');
+                        throw new Exception('providerInput_data-url');
                     $fl_provider_url = $provider_input->getAttribute("data-url") . "-magazasi";
 
                     if (!($provider_input->hasAttribute("data-name")))
-                        $this->setException('providerInput_data-name');
+                        throw new Exception('providerInput_data-name');
                     $fl_provider_name = $provider_input->getAttribute("data-name");
                     break;
                 }
@@ -661,41 +679,26 @@ INFO;
     }
 
 
-    private
-    function getRandBrand($brands) //ok
+    private function getRandBrand($brands) //ok
     {
         $brand = $brands[rand(0, (count($brands) - 1))];
         $brand_input = $brand->find("css", "input");
         if (!is_object($brand_input))
-            $this->setException('brandsInput');
+            throw new Exception('brandsInput');
         $attr = [];
         if (!$brand_input->hasAttribute('data-name'))
-            $this->setException('brand_data-name');
+            throw new Exception('brand_data-name');
         $attr['data-name'] = $brand_input->getAttribute("data-name");
 
         if (!$brand_input->hasAttribute('data-url'))
-            $this->setException('brand_data-url');
+            throw new Exception('brand_data-url');
         $attr['data-url'] = $brand_input->getAttribute("data-url");
         $attr['url'] = $attr['data-url'] . "-modelleri/";
         return $attr;
     }
 
-    private
-    function getRandColor($colors) //ok
-    {
-        $color = $colors[rand(0, (count($colors) - 1))];
-        $attr = [];
-        if (!$color->hasAttribute('data-name'))
-            $this->setException('color-data-name');
-        $attr['data-name'] = $color->getAttribute("data-name");
-        if (!$color->hasAttribute('data-key'))
-            $this->setException('color-data-key');
-        $attr['data-key'] = $color->getAttribute("data-key");
-        $attr['url'] = $attr['data-key'] . "-renkli";
-        return $attr;
-    }
-}
 
+}
 
 
 
