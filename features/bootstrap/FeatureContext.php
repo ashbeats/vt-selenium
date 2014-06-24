@@ -28,6 +28,7 @@ class FeatureContext extends MinkContext
         $this->setTime();
     }
 
+
     private function initSession()
     {
         $this->session = $this->getSession();
@@ -296,14 +297,9 @@ ALT;
                 throw new Exception("getProviderORBrands method only supports providers or brands parameters");
         }
         $obj = $this->page->find('css', $path . ' > div > div > div')->findAll('css', 'div');
-        $this->checkProvidersORBrands($obj);
+        if(count($obj) <= 0)
+            throw new Exception("There is no $what site");
         return $obj;
-    }
-
-    private function checkProvidersORBrands($what)
-    {
-        if (count($what) <= 0)
-            throw new Exception("There is no providers | brands on site");
     }
 
     private function setGeneralVariable()
@@ -507,6 +503,7 @@ INFO;
         return $colors;
     }
 
+
     private function getRandColor($colors) //ok
     {
         $color = $colors[rand(0, (count($colors) - 1))];
@@ -536,16 +533,75 @@ INFO;
 
     public function visitMoreColorFilter()
     {
-        $colors = $this->getColors();
-        $color1 = $this->getRandColor($colors);
-        $color2 = $this->getRandColor($colors);
-        $this->session->visit($this->base_url . $color1['data-key'] . "-ve-" . $color2['data-key'] . "-renkli");
+        list($color1,$color2) = $this->getTwoColor();
+        $urlMoreColorFilter = $this->base_url . $color1['data-key'] . "-ve-" . $color2['data-key'] . "-renkli";
+        $this->session->visit($urlMoreColorFilter);
         $this->subProduct = intval(($this->getFilterProgressBar()));
         echo "\"" . $color1['data-name'] . "\" ve \"" . $color2['data-name'] . "\" seçili iken <" .
             $this->subProduct . "> ürün var.\n\n";
         $this->mail_message .= "<span>\"" . $color1['data-name'] . "\" ve \"" . $color2['data-name'] . "\" seçili iken \"" .
             $this->subProduct . "\" ürün var.</span><br>\n\n";
     }
+
+
+    public function getRangeInputs()
+    {
+        $rangeDiv = $this->page->find('css', '#filterPrice > div > div.range-slider-input');
+        if (!is_object($rangeDiv))
+            throw new Exception('rangeDiv');
+        $rangeInputs = $rangeDiv->findAll('css', 'input');
+        if (count($rangeInputs) <= 0)
+            throw new Exception('randeInputs');
+        return $rangeInputs;
+    }
+
+    public function getRanges($rangeInputs)
+    {
+        $ranges = [];
+        if (!$rangeInputs[0]->hasAttribute('value'))
+            throw new Exception('ranndeMin');
+        $ranges['min'] = $rangeInputs[0]->getAttribute('value');
+        if (!$rangeInputs[1]->hasAttribute('value'))
+            throw new Exception('rangeMax');
+        $ranges['max'] = $rangeInputs[1]->getAttribute('value');
+        return $ranges;
+    }
+
+    public function getTwoColor()
+    {
+        $colors = $this->getColors();
+        $color1 = $this->getRandColor($colors);
+        $color2 = $this->getRandColor($colors);
+        return [$color1, $color2];
+    }
+
+
+    public function visitPriceFilter()
+    {
+        $ranges = $this->getRanges($this->getRangeInputs());
+        list($color1,$color2) = $this->getTwoColor();
+
+        $minPrice = rand($ranges['min'],$ranges['max']);
+        $maxPrice = rand($minPrice,$ranges['max']);
+
+        $criteriaUrl = '?criteria%5Bfacet_price%5D=%5B' . $minPrice . '+TO+' . $maxPrice . '%5D';
+
+        $this->session->visit($this->base_url . $color1['data-key'] . "-ve-" . $color2['data-key'] . "-renkli" . $criteriaUrl);
+        echo "\e[35m==================\nRenk+Fiyat Filtresi\n==================\n\e[0m";
+        $this->mail_message .= "<h3 id='color+price'> Renk+Fiyat Filtresi  </h3>\n";
+
+        $this->subProduct = intval($this->getFilterProgressBar());
+        echo "\"" . $color1['data-name'] . "\" ve \"" . $color2['data-name'] . "\" seçili iken, [" .
+            $minPrice . " - " . $maxPrice . "] fiyat aralığında: <" .
+            $this->subProduct . "> ürün var.\n\n";
+        $this->mail_message .= "<span>\"" . $color1['data-name'] . "\" ve \"" . $color2['data-name'] . "\" seçili iken, [" .
+            $minPrice . " - " . $maxPrice . "] fiyat aralığında: \"" .
+            $this->subProduct . "\" ürün var.</span><br>\n\n";
+
+
+    }
+
+
     /**
      * @Then /^I mix some filter$/
      */
@@ -561,50 +617,12 @@ INFO;
             $brands = $this->getProvidersORBrands('brands');
             echo "Provider sayısı: <$this->totalProvider>\nBrand sayısı: <$this->totalBrand>\nToplam ürün: $this->totalProduct \n\n";
 
-            // a color
             $this->visitColorFilter();
-
-            // more than one color
             $this->visitMoreColorFilter();
-
-            // price filter
-            $color1 = $this->getRandColor($colors);
-            $color2 = $this->getRandColor($colors);
-            $session->visit($this->base_url . $color1['data-key'] . "-ve-" . $color2['data-key'] . "-renkli");
-
-            $range_div = $page->find('css', '#filterPrice > div > div.range-slider-input');
-            if (!is_object($range_div))
-                throw new Exception('rangeDiv');
-            $range_inputs = $range_div->findAll('css', 'input');
-            if (count($range_inputs) == 0)
-                throw new Exception('randeInputs');
-
-            if (!$range_inputs[0]->hasAttribute('value'))
-                throw new Exception('ranndeMin');
-            $range_min = $range_inputs[0]->getAttribute('value');
-            if (!$range_inputs[1]->hasAttribute('value'))
-                throw new Exception('rangeMax');
-            $range_max = $range_inputs[1]->getAttribute('value');
-
-            $min_price = rand($range_min, $range_max);
-            $max_price = rand($min_price, $range_max);
-            $criteria_url = '?criteria%5Bfacet_price%5D=%5B' . $min_price . '+TO+' . $max_price . '%5D';
-
-            $session->visit($this->base_url . $color1['data-key'] . "-ve-" . $color2['data-key'] . "-renkli" . $criteria_url);
-
-            echo "\e[35m==================\nRenk+Fiyat Filtresi\n==================\n\e[0m";
-            $this->mail_message .= "<h3 id='color+price'> Renk+Fiyat Filtresi  </h3>\n";
-
-            $product = intval($this->getFilterProgressBar($page));
-            echo "\"" . $color1['data-name'] . "\" ve \"" . $color2['data-name'] . "\" seçili iken, [" .
-                $min_price . " - " . $max_price . "] fiyat aralığında: <" .
-                $product . "> ürün var.\n\n";
-            $this->mail_message .= "<span>\"" . $color1['data-name'] . "\" ve \"" . $color2['data-name'] . "\" seçili iken, [" .
-                $min_price . " - " . $max_price . "] fiyat aralığında: \"" .
-                $product . "\" ürün var.</span><br>\n\n";
+            $this->visitPriceFilter();
 
             // brand
-            $session->visit($this->base_url . "arama/");
+/*            $session->visit($this->base_url . "arama/");
             $brand_attr = $this->getRandBrand($brands);
             $session->visit($this->base_url . $brand_attr['url']);
 
@@ -613,9 +631,9 @@ INFO;
 
             $product = intval($this->getFilterProgressBar($page));
             echo "\"" . $brand_attr['data-name'] . "\" seçili iken: <$product> ürün var.\n";
-            $this->mail_message .= "<span> '{$brand_attr['data-name']}' seçili iken: '$product' ürün var.</span><br>\n";
+            $this->mail_message .= "<span> '{$brand_attr['data-name']}' seçili iken: '$product' ürün var.</span><br>\n";*/
 
-            // more than one brand
+/*            // more than one brand
             $brand1 = $this->getRandBrand($brands);
             $brand2 = $this->getRandBrand($brands);
 
@@ -658,12 +676,12 @@ INFO;
                 }
             }
 
-            /*            for ($i = 0; $i < count($providers); $i++) {
-                            if (intval(str_replace("(", "", ($providers[$i]->find('css', 'span')->getText())))) {
-                                $fl_provider_url = $providers[$i]->find('css', 'input')->getAttribute("data-url") . "-magazasi";
-                                $fl_provider_name = $providers[$i]->find('css', 'input')->getAttribute("data-name");
-                            }
-                        }*/
+            //            for ($i = 0; $i < count($providers); $i++) {
+              //              if (intval(str_replace("(", "", ($providers[$i]->find('css', 'span')->getText())))) {
+                //                $fl_provider_url = $providers[$i]->find('css', 'input')->getAttribute("data-url") . "-magazasi";
+                  //              $fl_provider_name = $providers[$i]->find('css', 'input')->getAttribute("data-name");
+                    //        }
+                      //  }
 
             $session->visit($this->base_url . $brand_attr['url'] . $fl_provider_url);
 
@@ -671,7 +689,7 @@ INFO;
             echo "\"" . $brand_attr['data-name'] . "\" ile \"" . $fl_provider_name . "\" mağazası seçili iken <" .
                 $product . "> ürüm var.\n";
             $this->mail_message .= "<span> \"" . $brand_attr['data-name'] . "\" ile  \"" . $fl_provider_name . "\" mağazası seçili iken \"" .
-                $product . "\" ürün var.</span><br>\n";
+                $product . "\" ürün var.</span><br>\n";*/
 
         } catch (Exception $e) {
             $this->getException($e);
