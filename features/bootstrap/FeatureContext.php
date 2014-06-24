@@ -128,7 +128,7 @@ ALT;
     {
         $progressBar = $this->page->findById("filterProgressBar");
         if (!is_object($progressBar))
-            $this->setException('filterProgressBar');
+            throw new Exception('filterProgressBar');
         return $progressBar->getText();
     }
 
@@ -170,7 +170,7 @@ ALT;
 
     public function getException($exception)
     {
-        $this->exception_message .= "\n" . $exception->getMessage();
+        $this->exception_message .= "<span class='exception'> $exception->getMessage() </span>";
         $this->iSendReportMail();
         throw new Exception($this->exception_message);
     }
@@ -306,12 +306,6 @@ ALT;
             throw new Exception("There is no providers | brands on site");
     }
 
-    private function setException($obj)
-    {
-        $this->exception_message .= "<span class='exception'> __! Check '$obj' path | id | attribute !__ </span>";
-        throw new Exception($this->exception_message);
-    }
-
     private function setGeneralVariable()
     {
         $this->totalProduct = intval($this->getFilterProgressBar());
@@ -410,10 +404,10 @@ INFO;
         $firstProduct = $this->page->find('xpath', "//*[@id='catalogResult']/div/div/div[$index]");
 
         if (!is_object($firstProduct))
-            $this->setException('firstProduct');
+            throw new Exception('firstProduct');
 
         if (!$firstProduct->hasAttribute('data-uri'))
-            $this->setException('firstProduct_data-uri');
+            throw new Exception('firstProduct_data-uri');
 
         return ['firstProduct' => $firstProduct,
             'data-uri' => $firstProduct->getAttribute('data-uri')];
@@ -459,7 +453,7 @@ INFO;
     {
         $newUserLink = $this->page->findById("newUserLink");
         if (!is_object($newUserLink))
-            $this->setException('newUserLink');
+            throw new Exception('newUserLink');
         $newUserLink->click();
     }
 
