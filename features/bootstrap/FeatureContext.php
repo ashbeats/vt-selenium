@@ -86,18 +86,18 @@ class FeatureContext extends MinkContext
 
                     <section id='exception'>
                     <h1> Exception </h1>
-                    $this->exception_message;
+                    $this->exception_message
                     </section>
 
                     <hr>
                     <section id='warning'>
                     <h2> Warning </h2>
-                    $this->warning_message;
+                    $this->warning_message
                     </section>
 
                     <hr><section id='report'>
                     <h3> BDD Test Report </h3>
-                    $this->mail_message;
+                    $this->mail_message
                     </section>
                 </div>
                 <footer>
@@ -492,17 +492,6 @@ INFO;
         return $randomString;
     }
 
-    public function getColors()
-    {
-        $colorsContainer = $this->page->find('css', '#filterColors > div > div > div > ul');
-        if (!is_object($colorsContainer))
-            throw new Exception('color_container');
-        $colors = $colorsContainer->findAll('css', 'li');
-        if (count($colors) <= 0)
-            throw new Exception('there is no colors on site');
-        return $colors;
-    }
-
 
     private function getRandColor($colors) //ok
     {
@@ -520,7 +509,7 @@ INFO;
 
     public function visitColorFilter()
     {
-        $colors = $this->getColors();
+        $colors = $this->getFields('li', '#filterColors > div > div > div > ul');
         $acolor = $this->getRandColor($colors);
         $this->session->visit($this->base_url . $acolor['url']);
         echo "\e[34m=============\nRenk Filtresi\n=============\n\e[0m";
@@ -543,16 +532,15 @@ INFO;
             $this->subProduct . "\" ürün var.</span><br>\n\n";
     }
 
-
-    public function getRangeInputs()
+    public function getFields($tag, $path)
     {
-        $rangeDiv = $this->page->find('css', '#filterPrice > div > div.range-slider-input');
-        if (!is_object($rangeDiv))
-            throw new Exception('rangeDiv');
-        $rangeInputs = $rangeDiv->findAll('css', 'input');
-        if (count($rangeInputs) <= 0)
-            throw new Exception('randeInputs');
-        return $rangeInputs;
+        $container = $this->page->find('css', $path);
+        if(!is_object($container))
+            throw new Exception($path);
+        $fields = $container->findAll('css', $tag);
+        if(count($fields) <= 0)
+            throw new Exception($tag);
+        return $fields;
     }
 
     public function getRanges($rangeInputs)
@@ -569,7 +557,7 @@ INFO;
 
     public function getTwoColor()
     {
-        $colors = $this->getColors();
+        $colors = $this->getFields('li', '#filterColors > div > div > div > ul');
         $color1 = $this->getRandColor($colors);
         $color2 = $this->getRandColor($colors);
         return [$color1, $color2];
@@ -578,16 +566,14 @@ INFO;
 
     public function visitPriceFilter()
     {
-        $ranges = $this->getRanges($this->getRangeInputs());
+        $ranges = $this->getRanges($this->getFields('input','#filterPrice > div > div.range-slider-input'));
         list($color1, $color2) = $this->getTwoColor();
         $minPrice = rand($ranges['min'], $ranges['max']);
         $maxPrice = rand($minPrice, $ranges['max']);
         $criteriaUrl = '?criteria%5Bfacet_price%5D=%5B' . $minPrice . '+TO+' . $maxPrice . '%5D';
-
         $this->session->visit($this->base_url . $color1['data-key'] . "-ve-" . $color2['data-key'] . "-renkli" . $criteriaUrl);
         echo "\e[35m==================\nRenk+Fiyat Filtresi\n==================\n\e[0m";
         $this->mail_message .= "<h3 id='color+price'> Renk+Fiyat Filtresi  </h3>\n";
-
         $this->subProduct = intval($this->getFilterProgressBar());
         echo "\"" . $color1['data-name'] . "\" ve \"" . $color2['data-name'] . "\" seçili iken, [" .
             $minPrice . " - " . $maxPrice . "] fiyat aralığında: <" .
