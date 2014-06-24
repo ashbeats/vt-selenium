@@ -297,7 +297,7 @@ ALT;
                 throw new Exception("getProviderORBrands method only supports providers or brands parameters");
         }
         $obj = $this->page->find('css', $path . ' > div > div > div')->findAll('css', 'div');
-        if(count($obj) <= 0)
+        if (count($obj) <= 0)
             throw new Exception("There is no $what site");
         return $obj;
     }
@@ -533,7 +533,7 @@ INFO;
 
     public function visitMoreColorFilter()
     {
-        list($color1,$color2) = $this->getTwoColor();
+        list($color1, $color2) = $this->getTwoColor();
         $urlMoreColorFilter = $this->base_url . $color1['data-key'] . "-ve-" . $color2['data-key'] . "-renkli";
         $this->session->visit($urlMoreColorFilter);
         $this->subProduct = intval(($this->getFilterProgressBar()));
@@ -579,11 +579,9 @@ INFO;
     public function visitPriceFilter()
     {
         $ranges = $this->getRanges($this->getRangeInputs());
-        list($color1,$color2) = $this->getTwoColor();
-
-        $minPrice = rand($ranges['min'],$ranges['max']);
-        $maxPrice = rand($minPrice,$ranges['max']);
-
+        list($color1, $color2) = $this->getTwoColor();
+        $minPrice = rand($ranges['min'], $ranges['max']);
+        $maxPrice = rand($minPrice, $ranges['max']);
         $criteriaUrl = '?criteria%5Bfacet_price%5D=%5B' . $minPrice . '+TO+' . $maxPrice . '%5D';
 
         $this->session->visit($this->base_url . $color1['data-key'] . "-ve-" . $color2['data-key'] . "-renkli" . $criteriaUrl);
@@ -597,8 +595,21 @@ INFO;
         $this->mail_message .= "<span>\"" . $color1['data-name'] . "\" ve \"" . $color2['data-name'] . "\" seçili iken, [" .
             $minPrice . " - " . $maxPrice . "] fiyat aralığında: \"" .
             $this->subProduct . "\" ürün var.</span><br>\n\n";
+    }
 
+    public function visitBrandFilter()
+    {
+        $this->session->visit($this->base_url . "arama/");
+        $brands = $this->getProvidersORBrands('brands');
+        $brandAttr = $this->getRandBrand($brands);
+        $this->session->visit($this->base_url . $brandAttr['url']);
 
+        echo "\e[36m==============\nMarka Filtresi\n==============\n\e[0m";
+        $this->mail_message .= "<h4 id='brandfilter'> Marka Filtresi </h4> ";
+
+        $this->subProduct = intval($this->getFilterProgressBar());
+        echo "\"" . $brandAttr['data-name'] . "\" seçili iken: <$this->subProduct> ürün var.\n";
+        $this->mail_message .= "<span> '{$brandAttr['data-name']}' seçili iken: '$this->subProduct' ürün var.</span><br>\n";
     }
 
 
@@ -614,82 +625,70 @@ INFO;
             $this->setGeneralInfo();
 
             $providers = $this->getProvidersORBrands('providers');
-            $brands = $this->getProvidersORBrands('brands');
             echo "Provider sayısı: <$this->totalProvider>\nBrand sayısı: <$this->totalBrand>\nToplam ürün: $this->totalProduct \n\n";
 
             $this->visitColorFilter();
             $this->visitMoreColorFilter();
             $this->visitPriceFilter();
+            $this->visitBrandFilter();
 
-            // brand
-/*            $session->visit($this->base_url . "arama/");
-            $brand_attr = $this->getRandBrand($brands);
-            $session->visit($this->base_url . $brand_attr['url']);
+            /*            // more than one brand
+                        $brand1 = $this->getRandBrand($brands);
+                        $brand2 = $this->getRandBrand($brands);
 
-            echo "\e[36m==============\nMarka Filtresi\n==============\n\e[0m";
-            $this->mail_message .= "<h4 id='brandfilter'> Marka Filtresi </h4> ";
+                        $session->visit($this->base_url . $brand1['data-url'] . "-ve-" . $brand2['url']);
+                        $product = intval($this->getFilterProgressBar($page));
+                        echo "\"" . $brand1['data-name'] . "\" ve \"" . $brand2['data-name'] . "\" seçili iken: <" .
+                            $product . "> ürün var.\n";
+                        $this->mail_message .= "<span>\"" . $brand1['data-name'] . "\" ve \"" . $brand2['data-name'] . "\" seçili iken \"" .
+                            $product . "\" ürün var.</span><br>\n";
 
-            $product = intval($this->getFilterProgressBar($page));
-            echo "\"" . $brand_attr['data-name'] . "\" seçili iken: <$product> ürün var.\n";
-            $this->mail_message .= "<span> '{$brand_attr['data-name']}' seçili iken: '$product' ürün var.</span><br>\n";*/
+                        // brand + provider
+                        $session->visit($this->base_url . "arama/");
+                        $brand_attr = $this->getRandBrand($brands);
+                        $prov_cont = $page->find("css", "#filterProvider > div > div > div");
+                        if (!is_object($prov_cont))
+                            throw new Exception('providerContainer');
+                        $providers = $prov_cont->findAll("css", "div");
+                        if (count($providers) == 0)
+                            throw new Exception('providers');
 
-/*            // more than one brand
-            $brand1 = $this->getRandBrand($brands);
-            $brand2 = $this->getRandBrand($brands);
+            //            $fl_provider_name = $fl_provider_url = '';
+                        for ($i = 0; $i < count($providers); $i++) {
+                            $provider_span = $providers[$i]->find('css', 'span');
+                            if (!is_object($provider_span))
+                                throw new Exception('providerSpan');
 
-            $session->visit($this->base_url . $brand1['data-url'] . "-ve-" . $brand2['url']);
-            $product = intval($this->getFilterProgressBar($page));
-            echo "\"" . $brand1['data-name'] . "\" ve \"" . $brand2['data-name'] . "\" seçili iken: <" .
-                $product . "> ürün var.\n";
-            $this->mail_message .= "<span>\"" . $brand1['data-name'] . "\" ve \"" . $brand2['data-name'] . "\" seçili iken \"" .
-                $product . "\" ürün var.</span><br>\n";
+                            if (intval(str_replace("(", "", ($provider_span->getText())))) { // higher zero
+                                $provider_input = $providers[$i]->find('css', 'input');
+                                if (!is_object($provider_input))
+                                    throw new Exception('providerInput');
 
-            // brand + provider
-            $session->visit($this->base_url . "arama/");
-            $brand_attr = $this->getRandBrand($brands);
-            $prov_cont = $page->find("css", "#filterProvider > div > div > div");
-            if (!is_object($prov_cont))
-                throw new Exception('providerContainer');
-            $providers = $prov_cont->findAll("css", "div");
-            if (count($providers) == 0)
-                throw new Exception('providers');
+                                if (!($provider_input->hasAttribute("data-url")))
+                                    throw new Exception('providerInput_data-url');
+                                $fl_provider_url = $provider_input->getAttribute("data-url") . "-magazasi";
 
-//            $fl_provider_name = $fl_provider_url = '';
-            for ($i = 0; $i < count($providers); $i++) {
-                $provider_span = $providers[$i]->find('css', 'span');
-                if (!is_object($provider_span))
-                    throw new Exception('providerSpan');
+                                if (!($provider_input->hasAttribute("data-name")))
+                                    throw new Exception('providerInput_data-name');
+                                $fl_provider_name = $provider_input->getAttribute("data-name");
+                                break;
+                            }
+                        }
 
-                if (intval(str_replace("(", "", ($provider_span->getText())))) { // higher zero
-                    $provider_input = $providers[$i]->find('css', 'input');
-                    if (!is_object($provider_input))
-                        throw new Exception('providerInput');
+                        //            for ($i = 0; $i < count($providers); $i++) {
+                          //              if (intval(str_replace("(", "", ($providers[$i]->find('css', 'span')->getText())))) {
+                            //                $fl_provider_url = $providers[$i]->find('css', 'input')->getAttribute("data-url") . "-magazasi";
+                              //              $fl_provider_name = $providers[$i]->find('css', 'input')->getAttribute("data-name");
+                                //        }
+                                  //  }
 
-                    if (!($provider_input->hasAttribute("data-url")))
-                        throw new Exception('providerInput_data-url');
-                    $fl_provider_url = $provider_input->getAttribute("data-url") . "-magazasi";
+                        $session->visit($this->base_url . $brand_attr['url'] . $fl_provider_url);
 
-                    if (!($provider_input->hasAttribute("data-name")))
-                        throw new Exception('providerInput_data-name');
-                    $fl_provider_name = $provider_input->getAttribute("data-name");
-                    break;
-                }
-            }
-
-            //            for ($i = 0; $i < count($providers); $i++) {
-              //              if (intval(str_replace("(", "", ($providers[$i]->find('css', 'span')->getText())))) {
-                //                $fl_provider_url = $providers[$i]->find('css', 'input')->getAttribute("data-url") . "-magazasi";
-                  //              $fl_provider_name = $providers[$i]->find('css', 'input')->getAttribute("data-name");
-                    //        }
-                      //  }
-
-            $session->visit($this->base_url . $brand_attr['url'] . $fl_provider_url);
-
-            $product = intval($this->getFilterProgressBar($page));
-            echo "\"" . $brand_attr['data-name'] . "\" ile \"" . $fl_provider_name . "\" mağazası seçili iken <" .
-                $product . "> ürüm var.\n";
-            $this->mail_message .= "<span> \"" . $brand_attr['data-name'] . "\" ile  \"" . $fl_provider_name . "\" mağazası seçili iken \"" .
-                $product . "\" ürün var.</span><br>\n";*/
+                        $product = intval($this->getFilterProgressBar($page));
+                        echo "\"" . $brand_attr['data-name'] . "\" ile \"" . $fl_provider_name . "\" mağazası seçili iken <" .
+                            $product . "> ürüm var.\n";
+                        $this->mail_message .= "<span> \"" . $brand_attr['data-name'] . "\" ile  \"" . $fl_provider_name . "\" mağazası seçili iken \"" .
+                            $product . "\" ürün var.</span><br>\n";*/
 
         } catch (Exception $e) {
             $this->getException($e);
@@ -700,21 +699,19 @@ INFO;
     private function getRandBrand($brands) //ok
     {
         $brand = $brands[rand(0, (count($brands) - 1))];
-        $brand_input = $brand->find("css", "input");
-        if (!is_object($brand_input))
+        $brandInput = $brand->find("css", "input");
+        if (!is_object($brandInput))
             throw new Exception('brandsInput');
         $attr = [];
-        if (!$brand_input->hasAttribute('data-name'))
+        if (!$brandInput->hasAttribute('data-name'))
             throw new Exception('brand_data-name');
-        $attr['data-name'] = $brand_input->getAttribute("data-name");
-
-        if (!$brand_input->hasAttribute('data-url'))
+        if (!$brandInput->hasAttribute('data-url'))
             throw new Exception('brand_data-url');
-        $attr['data-url'] = $brand_input->getAttribute("data-url");
+        $attr['data-name'] = $brandInput->getAttribute("data-name");
+        $attr['data-url'] = $brandInput->getAttribute("data-url");
         $attr['url'] = $attr['data-url'] . "-modelleri/";
         return $attr;
     }
-
 
 }
 
