@@ -7,6 +7,14 @@ use Behat\MinkExtension\Context\MinkContext;
 
 class FeatureContext extends MinkContext
 {
+    /**
+     * @When /^I start demo$/
+     */
+    public function iStartDemo()
+    {
+        die('die');
+    }
+
     public $base_url;
     public $exception_message = '';
     public $warning_message = '';
@@ -538,18 +546,6 @@ INFO;
         $this->mail_message .= "<span> '{$acolor['data-name']}' seçili iken '$this->subProduct' ürün var.</span>\n";
     }
 
-    public function visitMoreColorFilter()
-    {
-        list($color1, $color2) = $this->getTwoColor();
-        $urlMoreColorFilter = $this->base_url . $color1['data-key'] . "-ve-" . $color2['data-key'] . "-renkli";
-        $this->session->visit($urlMoreColorFilter);
-        $this->subProduct = intval(($this->getFilterProgressBar()));
-        echo "\"" . $color1['data-name'] . "\" ve \"" . $color2['data-name'] . "\" seçili iken <" .
-            $this->subProduct . "> ürün var.\n\n";
-        $this->mail_message .= "<span>\"" . $color1['data-name'] . "\" ve \"" . $color2['data-name'] . "\" seçili iken \"" .
-            $this->subProduct . "\" ürün var.</span><br>\n\n";
-    }
-
     public function getFields($tag, $path)
     {
         $container = $this->page->find('css', $path);
@@ -624,10 +620,47 @@ INFO;
         return [$brand1, $brand2];
     }
 
+    public function visitMoreXFilter($what)
+    {
+        list($item1,$item2) = function() use ($what){
+            if($what == 'color')
+                return $this->getTwoColor();
+            return $this->getTwoBrand();
+        };
+
+
+
+
+        /*list($item1, $item2) = function($all)  {
+            if($all == 'color' )
+                return $this->getTwoColor();
+            return $this->getTwoBrand();
+        };*/
+
+    }
+
+    public function visitMoreColorFilter()
+    {
+        list($color1, $color2) = $this->getTwoColor();
+        $urlMoreColorFilter = $this->base_url . $color1['data-key'] . "-ve-" . $color2['data-key'] . "-renkli";
+
+        $this->session->visit($urlMoreColorFilter);
+
+        $this->subProduct = intval(($this->getFilterProgressBar()));
+
+        echo "\"" . $color1['data-name'] . "\" ve \"" . $color2['data-name'] . "\" seçili iken <" .
+            $this->subProduct . "> ürün var.\n\n";
+        $this->mail_message .= "<span>\"" . $color1['data-name'] . "\" ve \"" . $color2['data-name'] . "\" seçili iken \"" .
+            $this->subProduct . "\" ürün var.</span><br>\n\n";
+    }
+
     public function visitMoreBrandFilter()
     {
         list($brand1, $brand2) = $this->getTwoBrand();
-        $this->session->visit($this->base_url . $brand1['data-url'] . "-ve-" . $brand2['url']);
+        $urlMoreColorFilter = $this->base_url . $brand1['data-url'] . "-ve-" . $brand2['url'];
+
+        $this->session->visit($urlMoreColorFilter);
+
         $this->subProduct = intval($this->getFilterProgressBar());
 
         echo "\"" . $brand1['data-name'] . "\" ve \"" . $brand2['data-name'] . "\" seçili iken: <" .
@@ -712,8 +745,9 @@ INFO;
         }
     }
 
-
 }
+
+
 
 
 
