@@ -12,7 +12,6 @@ class FeatureContext extends MinkContext
      */
     public function iStartDemo()
     {
-        die('die');
     }
 
     public $base_url;
@@ -46,39 +45,35 @@ class FeatureContext extends MinkContext
     /**
      * @Then /^I mix some filter$/
      */
-    private function sendMail()
+    private function sendMail($address)
     {
-        /**
-         * You have to setup PHPMailer to use this method
-         * @link https://github.com/PHPMailer/PHPMailer
-         */
         $this->setNoProblemStatus();
-
         $mail = new PHPMailer;
         $mail->isSMTP();
         $mail->FromName = 'Mustafa Hasturk';
-        $mail->addAddress('tzzzf@droplar.com', 'muhasturk');
+        $mail->addAddress($address);
         $mail->WordWrap = 50;
         $mail->isHTML(true);
         $mail->Subject = $this->mailSubject;
-        $mail->Body = $this->setMailBody();
+        $mail->Body = $this->setMailBody($address);
         $mail->AltBody = $this->setMailAltBody();
 
-        echo((!$mail->send()) ? "Message could not be sent.\n 'Mailer Error: ' . $mail->ErrorInfo . \n" :
-            "Message has been sent\n");
+        echo((!$mail->send()) ? "\e[31mMessage could not be sent.\n 'Mailer Error: ' $mail->ErrorInfo \n\e[0m" :
+            "\e[31mMessage has been sent\n\e[0m");
     }
 
     private function setNoProblemStatus()
     {
         if (empty($this->exception_message))
-            $this->exception_message = 'There is no exception';
+            $this->exception_message = 'No exception';
         if (empty($this->warning_message))
             $this->warning_message = 'No warning';
     }
 
-    private function setMailBody()
+    private function setMailBody($address)
     {
-        return <<<DOC
+        if ($address == "mustafa.hasturk@hotmail.com")
+            return <<<DOC
         <!DOCTYPE html>
         <html>
             <head>
@@ -92,29 +87,46 @@ class FeatureContext extends MinkContext
 
                 <div id='container'>
 
-                    <section id='exception'>
+                    <section id='report'>
+                    <h3> BDD Test Report </h3>
+                    $this->mail_message
+                    </section>
+
+                    <hr><section id='exception'>
                     <h1> Exception </h1>
                     $this->exception_message
                     </section>
 
-                    <hr>
-                    <section id='warning'>
+                    <hr><section id='warning'>
                     <h2> Warning </h2>
                     $this->warning_message
                     </section>
 
-                    <hr><section id='report'>
-                    <h3> BDD Test Report </h3>
-                    $this->mail_message
-                    </section>
                 </div>
-                <footer>
-                    <p> created by muhasturk </p>
-                </footer>
             </body>
         </html>
 DOC;
-
+        else
+            return <<<DOC
+            <!DOCTYPE html>
+        <html>
+            <head>
+                <title> Report </title>
+                <meta charset='utf-8'>
+            </head>
+            <body>
+                <header>
+                    <p> generated on {$this->now->format('Y-m-d H:i:s')} </p>
+                </header>
+                <div id='container'>
+                    <hr><section id='warning'>
+                    <h2> Warning </h2>
+                    $this->warning_message
+                    </section>
+                </div>
+            </body>
+        </html>
+DOC;
     }
 
     private function setMailAltBody()
@@ -130,7 +142,8 @@ ALT;
     public function iSendReportMail()
     {
         $this->mailSubject .= "_" . $this->now->getTimestamp();
-        $this->sendMail();
+        $this->sendMail('mustafa.hasturk@hotmail.com');
+        $this->sendMail('tklsz@acentri.com');
     }
 
     private function getFilterProgressBar()
@@ -273,17 +286,22 @@ ALT;
             $providerSpan = $providersDiv[$i]->find('css', 'span');
             $subProductText = $providerSpan->getText();
             $this->subProduct = intval(str_replace('(', '', $subProductText));
-            $this->mail_message .= "<div class='provider'>'$providerDataName' de/da : {$this->checkSubProduct()}</div>\n";
+            $this->checkSubProduct($providerDataName);
         }
         $this->mail_message .= "</div>\n";
     }
 
-    private function checkSubProduct()
+    private function checkSubProduct($providerDataName)
     {
-        $sp = "<span class='fail'> ürün yok. </span>";
-        if ($this->subProduct > 0)
+        if ($this->subProduct > 0) {
             $sp = "<span class='ok'> '$this->subProduct' ürün var. </span>";
-        return $sp;
+            $tm = "<div class='provider'>'$providerDataName' de/da $sp</div>\n";
+            $this->mail_message .= $tm;
+        } else {
+            $sp = "<span class='fail' style='color:red;'> ürün yok. </span>";
+            $tm = "<div class='provider'>'$providerDataName' de/da $sp</div>\n";
+            $this->warning_message .= $tm;
+        }
     }
 
     private function getProviderDataName($provider)
@@ -622,13 +640,11 @@ INFO;
 
     public function visitMoreXFilter($what)
     {
-        list($item1,$item2) = function() use ($what){
-            if($what == 'color')
+        list($item1, $item2) = function () use ($what) {
+            if ($what == 'color')
                 return $this->getTwoColor();
             return $this->getTwoBrand();
         };
-
-
 
 
         /*list($item1, $item2) = function($all)  {
