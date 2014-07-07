@@ -1,0 +1,16 @@
+{
+    "require": {
+	"phpmailer/phpmailer": "dev-master",
+        "behat/behat": "2.4.*@stable",
+        "behat/mink": "1.5",
+        "behat/mink-extension": "*",
+        "behat/mink-goutte-driver": "*",
+        "behat/mink-selenium2-driver": "*",
+        "behat/symfony2-extension": "*",
+    },
+
+    "minimum-stability": "dev",
+    "config": {
+        "bin-dir": "bin/"
+    }
+}

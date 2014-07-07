@@ -2,19 +2,28 @@ BDD Mink features to testing behaviors of **vitringez.com**
 ------------------------------------------------------------
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/muhasturk/Mink/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/muhasturk/Mink/?branch=master)
 
-First you have to execute selenium driver:
+install composer
+
+    curl -sS https://getcomposer.org/installer | php
+    mv composer.phar /usr/local/bin/composer
+
+execute selenium driver:
 
     java -jar selenium-server*.jar
 
-Update your **composer**.json file:
+create new symfony2 project
+
+    composer create-project symfony/framework-standard-edition path/ "2.3.*"
+
+update your **composer**.json file with I gave one
 
     composor update
 
 move **Features** folder in your Symfony2 bundle
 
-add "main_mail" and "other_mail" parameters in your **parameters.yml**
+set your parameters in your /app/config/**parameters.yml**
 
-Test all features:
+test features:
 
     bin/behat @YourBundleName/featurename.feature
 
