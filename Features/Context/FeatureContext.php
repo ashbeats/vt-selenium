@@ -13,12 +13,16 @@ use Behat\MinkExtension\Context\MinkContext;
 use PHPMailer;
 use Behat\Symfony2Extension\Context\KernelAwareInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 
 class FeatureContext extends MinkContext implements KernelAwareInterface
 {
     /** @var  KernelInterface  */
     public $kernel;
+
+    /** @var  ContainerInterface */
+    public $container;
 
     public $base_url;
     public $exception_message = '';
@@ -35,6 +39,8 @@ class FeatureContext extends MinkContext implements KernelAwareInterface
     private  $now;
     private $session;
     private $page;
+    /** @var  PHPMailer */
+    public $mail;
 
 
     public function setKernel(KernelInterface $kernel)
@@ -42,10 +48,21 @@ class FeatureContext extends MinkContext implements KernelAwareInterface
         $this->kernel = $kernel;
     }
 
+/*    public function setContainer()
+    {
+        $this->container = $this->kernel->getContainer();
+    }
+
+    public function getParameter($element)
+    {
+        return $this->container->getParameter($element);
+    }*/
+
 
     function __construct()
     {
         $this->base_url = "http://vitringez.com/";
+//        $this->setContainer();
         $this->setTime();
     }
 
@@ -56,10 +73,46 @@ class FeatureContext extends MinkContext implements KernelAwareInterface
         $this->page = $this->session->getPage();
     }
 
+    public function sendMail($addr)
+    {
+        $this->mail = new PHPMailer;
+
+        $this->setMailAuth();
+        $this->setMailContact();
+        $this->mail->addAddress($addr);
+        $this->setMailText($addr);
+
+        echo((!$this->mail->send()) ? "\e[31mMessage could not be sent.\n 'Mailer Error: ' {$this->mail->ErrorInfo} \n\e[0m" :
+            "\e[31mMessage has been sent\n\e[0m");
+
+    }
+
+    public function setMailAuth()
+    {
+        $this->mail->isSMTP();
+        $this->mail->Host = $this->kernel->getContainer()->getParameter("Host");
+        $this->mail->Port = $this->kernel->getContainer()->getParameter("Port");
+        $this->mail->SMTPAuth = true;
+        $this->mail->Username = $this->kernel->getContainer()->getParameter("Username");
+        $this->mail->Password = $this->kernel->getContainer()->getParameter("Password");
+        $this->mail->SMTPSecure = $this->kernel->getContainer()->getParameter("SMTPSecure");
+    }
+
+    public function setMailContact()
+    {
+        $this->mail->From = $this->kernel->getContainer()->getParameter("From");
+        $this->mail->FromName = $this->kernel->getContainer()->getParameter("FromName");
+    }
+
     /**
-     * @Then /^I mix some filter$/
+     * @When /^I start demo$/
      */
-    private function sendMail($address)
+    public function iStartDemo()    {
+
+
+    }
+
+/*    oldfunction private function sendMail($address)
     {
         $this->setNoProblemStatus();
         $mail = new PHPMailer;
@@ -74,6 +127,15 @@ class FeatureContext extends MinkContext implements KernelAwareInterface
 
         echo((!$mail->send()) ? "\e[31mMessage could not be sent.\n 'Mailer Error: ' $mail->ErrorInfo \n\e[0m" :
             "\e[31mMessage has been sent\n\e[0m");
+    }*/
+
+    public function setMailText($addr)
+    {
+        $this->setNoProblemStatus();
+        $this->mail->isHTML(true);
+        $this->mail->Subject = $this->mailSubject;
+        $this->mail->Body = $this->setMailBody($addr);
+        $this->mail->AltBody = $this->setMailAltBody();
     }
 
     private function setNoProblemStatus()
@@ -86,12 +148,10 @@ class FeatureContext extends MinkContext implements KernelAwareInterface
 
     private function setMailBody($address)
     {
-        if (true)
+        if ($address == $this->kernel->getContainer()->getParameter("main_recipient"))
             return <<<DOC
             <body>
-                <header>
                     <p> generated on {$this->now->format('Y-m-d H:i:s')} </p>
-                </header>
 
                 <div id='container'>
 
@@ -116,9 +176,7 @@ DOC;
         else
             return <<<DOC
             <body>
-                <header>
                     <p> generated on {$this->now->format('Y-m-d H:i:s')} </p>
-                </header>
                 <div id='container'>
                     <hr><section id='warning'>
                     <h2> Warning </h2>
@@ -141,13 +199,13 @@ ALT;
      */
     public function iSendReportMail()
     {
-
         $this->mailSubject .= "_" . $this->now->getTimestamp();
-        $addr = $this->kernel->getContainer()->getParameter("other_mail");
-        echo $addr."\n";
-        $this->sendMail($addr);
-//        $this->sendMail('tklsz@acentri.com');
-
+        $this->sendMail(
+          $this->kernel->getContainer()->getParameter("main_recipient")
+        );
+        $this->sendMail(
+          $this->kernel->getContainer()->getParameter("other_recipient")
+        );
     }
 
     private function getFilterProgressBar()
@@ -180,7 +238,7 @@ ALT;
     {
         $this->mail_message .= "<span class='fail'> $algorithm algorithm has a problem </span><br>";
         if ($condition)
-            $this->mail_message = "<span class='ok'> $algorithm algorithm works properly </span><br>\n";
+            $this->mail_message .= "<span class='ok'> $algorithm algorithm works properly </span><br>\n";
         echo $condition ? "\e[34m'$algorithm' algorithm works properly\n" :
             "'$algorithm' algorithm has a problem!\e[0m\n";
     }
@@ -765,14 +823,6 @@ INFO;
         }
     }
 
-
-    /**
-     * @When /^I start demo$/
-     */
-    public function iStartDemo()
-    {
-
-    }
 
 }
 

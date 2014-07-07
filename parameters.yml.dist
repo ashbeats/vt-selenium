@@ -1,4 +1,14 @@
 parameters:
-    main_mail: mus.hasturk@gmail.com
-    other_mail: tklsz@acentri.com
+    
+    Host: SMTP hosts exp: smtp.yandex.ru
+    Port: SMTP port 465
+    Username: example@site.com
+    Password: yourpassword
+
+    SMTPSecure: ssl or tls
+    From: your mail
+    FromName: optional sender name
+
+    main_recipient: boss@example.com
+    other_recipient: others@example.com
 
