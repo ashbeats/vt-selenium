@@ -3,31 +3,45 @@
  * @author Mustafa Hasturk
  * @site http://github.com/muhasturk
  */
-use Behat\MinkExtension\Context\MinkContext;
 
-class FeatureContext extends MinkContext
+namespace Acme\DemoBundle\Features\Context;
+
+use Behat\Symfony2Extension\Context\KernelDictionary;
+use \DateTime;
+use \DateTimeZone;
+use Behat\MinkExtension\Context\MinkContext;
+use PHPMailer;
+use Behat\Symfony2Extension\Context\KernelAwareInterface;
+use Symfony\Component\HttpKernel\KernelInterface;
+
+
+class FeatureContext extends MinkContext implements KernelAwareInterface
 {
-    /**
-     * @When /^I start demo$/
-     */
-    public function iStartDemo()
-    {
-    }
+    /** @var  KernelInterface  */
+    public $kernel;
 
     public $base_url;
     public $exception_message = '';
     public $warning_message = '';
-    private $mail_message = '';
     public $mailSubject = 'BDD Report';
+    private $mail_message = '';
 
     private $totalProduct;
     private $subProduct;
     private $totalProvider;
     private $totalBrand;
 
-    protected $now;
+    /** @var  DataTime  */
+    private  $now;
     private $session;
     private $page;
+
+
+    public function setKernel(KernelInterface $kernel)
+    {
+        $this->kernel = $kernel;
+    }
+
 
     function __construct()
     {
@@ -72,14 +86,8 @@ class FeatureContext extends MinkContext
 
     private function setMailBody($address)
     {
-        if ($address == "mustafa.hasturk@hotmail.com")
+        if (true)
             return <<<DOC
-        <!DOCTYPE html>
-        <html>
-            <head>
-                <title> Report </title>
-                <meta charset='utf-8'>
-            </head>
             <body>
                 <header>
                     <p> generated on {$this->now->format('Y-m-d H:i:s')} </p>
@@ -104,16 +112,9 @@ class FeatureContext extends MinkContext
 
                 </div>
             </body>
-        </html>
 DOC;
         else
             return <<<DOC
-            <!DOCTYPE html>
-        <html>
-            <head>
-                <title> Report </title>
-                <meta charset='utf-8'>
-            </head>
             <body>
                 <header>
                     <p> generated on {$this->now->format('Y-m-d H:i:s')} </p>
@@ -125,7 +126,6 @@ DOC;
                     </section>
                 </div>
             </body>
-        </html>
 DOC;
     }
 
@@ -141,9 +141,13 @@ ALT;
      */
     public function iSendReportMail()
     {
+
         $this->mailSubject .= "_" . $this->now->getTimestamp();
-        $this->sendMail('mustafa.hasturk@hotmail.com');
-        $this->sendMail('tklsz@acentri.com');
+        $addr = $this->kernel->getContainer()->getParameter("other_mail");
+        echo $addr."\n";
+        $this->sendMail($addr);
+//        $this->sendMail('tklsz@acentri.com');
+
     }
 
     private function getFilterProgressBar()
@@ -759,6 +763,15 @@ INFO;
         } catch (Exception $e) {
             $this->getException($e);
         }
+    }
+
+
+    /**
+     * @When /^I start demo$/
+     */
+    public function iStartDemo()
+    {
+
     }
 
 }

@@ -6,17 +6,17 @@ First you have to execute selenium driver:
 
     java -jar selenium-server*.jar
 
-Update **composer**:
+Update your **composer**.json file:
 
     composor update
 
+move **Features** folder in your Symfony2 bundle
+
+add "main_mail" and "other_mail" parameters in your **parameters.yml**
+
 Test all features:
 
-    bin/behat
-
-or one of you want
-
-    bin/behat features/{featurename}
+    bin/behat @YourBundleName/featurename.feature
 
 
 

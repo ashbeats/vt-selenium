@@ -1,5 +1,5 @@
 Feature: This place is my workstation
-  As a god!
+  As a
 
-  Scenario: Just get out of here
+  Scenario: try someting
     When I start demo

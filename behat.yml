@@ -1,6 +1,13 @@
 default:
   extensions:
+    Behat\Symfony2Extension\Extension: ~
+
     Behat\MinkExtension\Extension:
       goutte: ~
       selenium2: ~
       base_url: http://vitringez.com
+      files_path: '/var/www/vitringez/features/resource'
+
+
+
+
