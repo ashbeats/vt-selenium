@@ -82,9 +82,25 @@ class FeatureContext extends MinkContext implements KernelAwareInterface
         $this->mail->addAddress($addr);
         $this->setMailText($addr);
 
+        if(!$this->decideSendMailorNot($addr))
+            return;
+
         echo((!$this->mail->send()) ? "\e[31mMessage could not be sent.\n 'Mailer Error: ' {$this->mail->ErrorInfo} \n\e[0m" :
             "\e[31mMessage has been sent\n\e[0m");
 
+    }
+
+    public function decideSendMailorNot($addr)
+    {
+        if($addr == $this->kernel->getContainer()->getParameter('main_recipient'))
+            return true;
+        else
+        {
+            if($this->exception_message=='No exception' && $this->warning_message=='No warning')
+                return false;
+            else
+                return true;
+        }
     }
 
     public function setMailAuth()
@@ -111,23 +127,6 @@ class FeatureContext extends MinkContext implements KernelAwareInterface
 
 
     }
-
-/*    oldfunction private function sendMail($address)
-    {
-        $this->setNoProblemStatus();
-        $mail = new PHPMailer;
-        $mail->isSMTP();
-        $mail->FromName = 'Mustafa Hasturk';
-        $mail->addAddress($address);
-        $mail->WordWrap = 50;
-        $mail->isHTML(true);
-        $mail->Subject = $this->mailSubject;
-        $mail->Body = $this->setMailBody($address);
-        $mail->AltBody = $this->setMailAltBody();
-
-        echo((!$mail->send()) ? "\e[31mMessage could not be sent.\n 'Mailer Error: ' $mail->ErrorInfo \n\e[0m" :
-            "\e[31mMessage has been sent\n\e[0m");
-    }*/
 
     public function setMailText($addr)
     {
@@ -178,6 +177,11 @@ DOC;
             <body>
                     <p> generated on {$this->now->format('Y-m-d H:i:s')} </p>
                 <div id='container'>
+
+                    <hr><section id='exception'>
+                    <h1> Exception </h1>
+                    $this->exception_message
+                    </section>
                     <hr><section id='warning'>
                     <h2> Warning </h2>
                     $this->warning_message
