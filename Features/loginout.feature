@@ -19,3 +19,4 @@ Feature: log in/out feature
     And I should not see "Nedeni bilinmeyen bir hata oluştu."
     Then I go to "/kullanici/cikis"
     And I should not see "Hesabım"
+    And I send login-out report

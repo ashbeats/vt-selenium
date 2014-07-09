@@ -208,6 +208,22 @@ ALT;
         );
     }
 
+    /**
+     * @Given /^I send login-out report$/
+     */
+    public function iSendLoginOutReport()
+    {
+        $this->mailSubject = "Login-out Feature Report_".$this->now->getTimestamp();
+        $this->mail_message = "Login-out test ok!";
+        $this->sendMail(
+            $this->kernel->getContainer()->getParameter("main_recipient")
+        );
+        $this->sendMail(
+            $this->kernel->getContainer()->getParameter("other_recipient")
+        );
+    }
+
+
     private function getFilterProgressBar()
     {
         $progressBar = $this->page->findById("filterProgressBar");
@@ -236,9 +252,10 @@ ALT;
 
     private function getSortAlgorithmResult($condition, $algorithm)
     {
-        $this->mail_message .= "<span class='fail'> $algorithm algorithm has a problem </span><br>";
         if ($condition)
             $this->mail_message .= "<span class='ok'> $algorithm algorithm works properly </span><br>\n";
+        else
+            $this->mail_message .= "<span class='fail'> $algorithm algorithm has a problem </span><br>";
         echo $condition ? "\e[34m'$algorithm' algorithm works properly\n" :
             "'$algorithm' algorithm has a problem!\e[0m\n";
     }
@@ -254,7 +271,7 @@ ALT;
 
     public function getException($exception)
     {
-        $this->exception_message .= "<span class='exception'> $exception->getMessage() </span>";
+        $this->exception_message .= "<span class='exception'> {$exception->getMessage()} </span>";
         $this->iSendReportMail();
         throw new Exception($this->exception_message);
     }
@@ -769,54 +786,6 @@ INFO;
 
             echo "Provider sayısı: <$this->totalProvider>\nBrand sayısı: <$this->totalBrand>\nToplam ürün: $this->totalProduct \n\n";
             $this->callVisitMethods();
-
-            /*
-                        // brand + provider
-                        $session->visit($this->base_url . "arama/");
-                        $brand_attr = $this->getRandBrand($brands);
-                        $prov_cont = $page->find("css", "#filterProvider > div > div > div");
-                        if (!is_object($prov_cont))
-                            throw new Exception('providerContainer');
-                        $providers = $prov_cont->findAll("css", "div");
-                        if (count($providers) == 0)
-                            throw new Exception('providers');
-
-            //            $fl_provider_name = $fl_provider_url = '';
-                        for ($i = 0; $i < count($providers); $i++) {
-                            $provider_span = $providers[$i]->find('css', 'span');
-                            if (!is_object($provider_span))
-                                throw new Exception('providerSpan');
-
-                            if (intval(str_replace("(", "", ($provider_span->getText())))) { // higher zero
-                                $provider_input = $providers[$i]->find('css', 'input');
-                                if (!is_object($provider_input))
-                                    throw new Exception('providerInput');
-
-                                if (!($provider_input->hasAttribute("data-url")))
-                                    throw new Exception('providerInput_data-url');
-                                $fl_provider_url = $provider_input->getAttribute("data-url") . "-magazasi";
-
-                                if (!($provider_input->hasAttribute("data-name")))
-                                    throw new Exception('providerInput_data-name');
-                                $fl_provider_name = $provider_input->getAttribute("data-name");
-                                break;
-                            }
-                        }
-
-                        //            for ($i = 0; $i < count($providers); $i++) {
-                          //              if (intval(str_replace("(", "", ($providers[$i]->find('css', 'span')->getText())))) {
-                            //                $fl_provider_url = $providers[$i]->find('css', 'input')->getAttribute("data-url") . "-magazasi";
-                              //              $fl_provider_name = $providers[$i]->find('css', 'input')->getAttribute("data-name");
-                                //        }
-                                  //  }
-
-                        $session->visit($this->base_url . $brand_attr['url'] . $fl_provider_url);
-
-                        $product = intval($this->getFilterProgressBar($page));
-                        echo "\"" . $brand_attr['data-name'] . "\" ile \"" . $fl_provider_name . "\" mağazası seçili iken <" .
-                            $product . "> ürüm var.\n";
-                        $this->mail_message .= "<span> \"" . $brand_attr['data-name'] . "\" ile  \"" . $fl_provider_name . "\" mağazası seçili iken \"" .
-                            $product . "\" ürün var.</span><br>\n";*/
 
         } catch (Exception $e) {
             $this->getException($e);
