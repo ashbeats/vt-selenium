@@ -14,6 +14,7 @@ use PHPMailer;
 use Behat\Symfony2Extension\Context\KernelAwareInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Exception;
 
 
 class FeatureContext extends MinkContext implements KernelAwareInterface
@@ -231,14 +232,9 @@ ALT;
      */
     public function iSendLoginOutReport()
     {
-        $this->mailSubject = "Login-out Feature Report_".$this->now->getTimestamp();
+        $this->mailSubject = "Login-out Feature Report";
         $this->mail_message = "Login-out test ok!";
-        $this->sendMail(
-            $this->kernel->getContainer()->getParameter("main_recipient")
-        );
-        $this->sendMail(
-            $this->kernel->getContainer()->getParameter("other_recipient")
-        );
+        $this->iSendReportMail();
     }
 
 
@@ -762,19 +758,6 @@ INFO;
 
     public function visitMoreXFilter($what)
     {
-        list($item1, $item2) = function () use ($what) {
-            if ($what == 'color')
-                return $this->getTwoColor();
-            return $this->getTwoBrand();
-        };
-
-
-        /*list($item1, $item2) = function($all)  {
-            if($all == 'color' )
-                return $this->getTwoColor();
-            return $this->getTwoBrand();
-        };*/
-
     }
 
     public function visitMoreColorFilter()
