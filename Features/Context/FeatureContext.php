@@ -35,7 +35,7 @@ class FeatureContext extends MinkContext implements KernelAwareInterface
     private $totalProvider;
     private $totalBrand;
 
-    /** @var  DataTime  */
+    /** @var  DateTime  */
     private  $now;
     private $session;
     private $page;
@@ -77,17 +77,26 @@ class FeatureContext extends MinkContext implements KernelAwareInterface
     {
         $this->mail = new PHPMailer;
 
+        if(!$this->decideSendMailorNot($addr))
+            return;
+        $this->mail->CharSet = 'utf-8';
         $this->setMailAuth();
         $this->setMailContact();
         $this->mail->addAddress($addr);
         $this->setMailText($addr);
 
-        if(!$this->decideSendMailorNot($addr))
-            return;
+        $this->decideAttachment($addr);
 
         echo((!$this->mail->send()) ? "\e[31mMessage could not be sent.\n 'Mailer Error: ' {$this->mail->ErrorInfo} \n\e[0m" :
             "\e[31mMessage has been sent\n\e[0m");
 
+    }
+
+    public function decideAttachment($addr){
+        if($addr == $this->kernel->getContainer()->getParameter('main_recipient')){
+            $this->mail->addAttachment(dirname(__FILE__)."/../resource/report.csv",
+                "report_{$this->now->format('Y-m-d_H:i:s')}.csv");
+        }
     }
 
     public function decideSendMailorNot($addr)
@@ -126,7 +135,10 @@ class FeatureContext extends MinkContext implements KernelAwareInterface
     public function iStartDemo()    {
 
 
+
     }
+
+
 
     public function setMailText($addr)
     {
@@ -356,6 +368,8 @@ ALT;
             $this->setGeneralVariable();
             $this->setGeneralInfo();
             $this->scanProviders($this->getProvidersORBrands('providers'));
+            $this->iSendReportMail();
+            unlink(dirname(__FILE__)."/../resource/report.csv");
         } catch (Exception $e) {
             $this->getException($e);
         }
@@ -365,22 +379,44 @@ ALT;
     {
         $this->mail_message .= "<div class='providers'>\n";
         for ($i = 1; $i < $this->totalProvider; $i++) {
-            $providerDataName = $this->getProviderDataName($providersDiv[$i]);
+            $providerDataName = strval($this->getProviderDataName($providersDiv[$i]));
             $providerSpan = $providersDiv[$i]->find('css', 'span');
             $subProductText = $providerSpan->getText();
             $this->subProduct = intval(str_replace('(', '', $subProductText));
             $this->checkSubProduct($providerDataName);
+            $this->setCSVFile($this->setCSVFields($providerDataName));
         }
-        $this->mail_message .= "</div>\n";
+        $this->mail_message .= "<span style='color: #000066; font-style: oblique'>Report.csv is at attachment. </span></div>";
     }
+
+    public function setCSVFields($provider){
+        $fieldContainer = [];
+        $field = [$provider,$this->subProduct];
+        $fieldContainer[] = $field;
+        return $fieldContainer;
+    }
+
+    public function setCSVFile($fields){
+        $f = fopen(dirname(__FILE__)."/../resource/report.csv",'ab+');
+        foreach($fields as $line)
+            fputcsv($f,$line);
+        fclose($f);
+    }
+
 
     private function checkSubProduct($providerDataName)
     {
-        if ($this->subProduct > 0) {
+/*        if ($this->subProduct > 0) {
             $sp = "<span class='ok'> '$this->subProduct' ürün var. </span>";
             $tm = "<div class='provider'>'$providerDataName' de/da $sp</div>\n";
             $this->mail_message .= $tm;
         } else {
+            $sp = "<span class='fail' style='color:red;'> ürün yok. </span>";
+            $tm = "<div class='provider'>'$providerDataName' de/da $sp</div>\n";
+            $this->warning_message .= $tm;
+        }*/
+        if($this->subProduct <=0)
+        {
             $sp = "<span class='fail' style='color:red;'> ürün yok. </span>";
             $tm = "<div class='provider'>'$providerDataName' de/da $sp</div>\n";
             $this->warning_message .= $tm;
@@ -422,9 +458,9 @@ ALT;
     {
         $this->mail_message .= <<<INFO
         <div id='general'>\n
-        <span class='totalProduct'> Toplam ürün: {$this->totalProduct} </span><br>\n
-        <span class='totalProvider'> Provider sayısı: {$this->totalProvider} </span><br>\n
-        <span class='totalBrands'> Brand sayısı:  {$this->totalBrand} </span><br>\n
+        <span class='totalProduct'> Total product: {$this->totalProduct} </span><br>\n
+        <span class='totalProvider'> Provider count: {$this->totalProvider} </span><br>\n
+        <span class='totalBrands'> Brand count  {$this->totalBrand} </span><br>\n
         </div>\n
 INFO;
     }
