@@ -93,9 +93,11 @@ class FeatureContext extends MinkContext implements KernelAwareInterface
     }
 
     public function decideAttachment($addr){
-        if($addr == $this->kernel->getContainer()->getParameter('main_recipient')){
-            $this->mail->addAttachment(dirname(__FILE__)."/../resource/report.csv",
-                "report_{$this->now->format('Y-m-d_H:i:s')}.csv");
+        if(strpos($this->mailSubject,'ScanSite') !== false){
+            if($addr == $this->kernel->getContainer()->getParameter('main_recipient')){
+                $this->mail->addAttachment(dirname(__FILE__)."/../resource/report.csv",
+                    "report_{$this->now->format('Y-m-d_H:i:s')}.csv");
+            }
         }
     }
 
@@ -115,18 +117,18 @@ class FeatureContext extends MinkContext implements KernelAwareInterface
     public function setMailAuth()
     {
         $this->mail->isSMTP();
-        $this->mail->Host = $this->kernel->getContainer()->getParameter("Host");
-        $this->mail->Port = $this->kernel->getContainer()->getParameter("Port");
+        $this->mail->Host = strval($this->kernel->getContainer()->getParameter("Host"));
+        $this->mail->Port = intval($this->kernel->getContainer()->getParameter("Port"));
         $this->mail->SMTPAuth = true;
-        $this->mail->Username = $this->kernel->getContainer()->getParameter("Username");
-        $this->mail->Password = $this->kernel->getContainer()->getParameter("Password");
-        $this->mail->SMTPSecure = $this->kernel->getContainer()->getParameter("SMTPSecure");
+        $this->mail->Username = strval($this->kernel->getContainer()->getParameter("Username"));
+        $this->mail->Password = strval($this->kernel->getContainer()->getParameter("Password"));
+        $this->mail->SMTPSecure = strval($this->kernel->getContainer()->getParameter("SMTPSecure"));
     }
 
     public function setMailContact()
     {
-        $this->mail->From = $this->kernel->getContainer()->getParameter("From");
-        $this->mail->FromName = $this->kernel->getContainer()->getParameter("FromName");
+        $this->mail->From = strval($this->kernel->getContainer()->getParameter("From"));
+        $this->mail->FromName = strval($this->kernel->getContainer()->getParameter("FromName"));
     }
 
     /**
@@ -361,7 +363,7 @@ ALT;
      */
     public function iScanCategory($category)
     {
-        $this->mailSubject = "ScanCategory Report";
+        $this->mailSubject = "ScanSite Report";
         try {
             $this->initSession();
             $this->session->visit($this->setUrl($category));
@@ -460,7 +462,7 @@ ALT;
         <div id='general'>\n
         <span class='totalProduct'> Total product: {$this->totalProduct} </span><br>\n
         <span class='totalProvider'> Provider count: {$this->totalProvider} </span><br>\n
-        <span class='totalBrands'> Brand count  {$this->totalBrand} </span><br>\n
+        <span class='totalBrands'> Brand count: {$this->totalBrand} </span><br>\n
         </div>\n
 INFO;
     }
@@ -719,7 +721,8 @@ INFO;
     {
         $ranges = $this->getRanges($this->getFields('input', '#filterPrice > div > div.range-slider-input'));
         list($color1, $color2) = $this->getTwoColor();
-        $minPrice = rand($ranges['min'], $ranges['max']);
+//        $minPrice = rand($ranges['min'], $ranges['max']);
+        $minPrice = rand($ranges['min'], 50);
         $maxPrice = rand($minPrice, $ranges['max']);
         $criteriaUrl = '?criteria%5Bfacet_price%5D=%5B' . $minPrice . '+TO+' . $maxPrice . '%5D';
         $this->session->visit($this->base_url . $color1['data-key'] . "-ve-" . $color2['data-key'] . "-renkli" . $criteriaUrl);
