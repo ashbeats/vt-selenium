@@ -20,5 +20,4 @@ Feature: log in/out feature
     Then I go to "/kullanici/cikis"
     And I should not see "Hesabım"
     And I send login-out report
-    Then close browser
 

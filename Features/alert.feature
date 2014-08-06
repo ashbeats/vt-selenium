@@ -19,7 +19,6 @@ Feature: User sets alarm feature
     When I set the fashion alert
     #When I set the discount alert
     And I send report mail
-    Then close browser
 
 
 

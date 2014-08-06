@@ -23,7 +23,6 @@ Feature: User profile behaviour test
     Then I should see "Profiliniz başarıyla güncellendi" in the "#content > div > section > div.alert.alert-success" element
     Then I reload the page
     And I send report mail
-    Then close browser
 
 
 

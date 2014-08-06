@@ -141,6 +141,18 @@ class FeatureContext extends MinkContext implements KernelAwareInterface
      */
     public function iStartDemo()    {
         $this->initSession();
+        try{
+            $this->session->visit("http://mustafahasturk.com");
+            $this->session->stop();
+            echo "merhaba";
+
+
+
+        }catch (Exception $e)
+        {
+            $this->getException($e);
+        }
+
     }
 
 
@@ -296,7 +308,10 @@ ALT;
     public function getException($exception)
     {
         $this->exception_message .= "<span class='exception'> {$exception->getMessage()} </span>";
+        $this->exception_message .= "<br><p class='line'> Exception occurred on: {$exception->getLine()}</p>";
         $this->iSendReportMail();
+        if($this->session)
+            $this->session->stop();
         throw new Exception($this->exception_message);
     }
 
@@ -798,12 +813,12 @@ INFO;
 
     public function callVisitMethods()
     {
-        /*$this->visitColorFilter();
+        $this->visitColorFilter();
         $this->visitMoreColorFilter();
         $this->visitPriceFilter();
         $this->visitBrandFilter();
-        $this->visitMoreBrandFilter();*/
-        $this->visitBrandandProbider();
+        $this->visitMoreBrandFilter();
+//        $this->visitBrandandProbider();
     }
 
     public function visitBrandandProbider(){
