@@ -13,6 +13,8 @@ Feature: register feature
     Then I wait "1" second
     Then I should see "Hesabım"
     And I send report mail
+    Then close browser
+
 
 
 

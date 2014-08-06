@@ -6,6 +6,7 @@
 
 namespace Acme\DemoBundle\Features\Context;
 
+use Behat\Mink\Session;
 use Behat\Symfony2Extension\Context\KernelDictionary;
 use \DateTime;
 use \DateTimeZone;
@@ -38,10 +39,13 @@ class FeatureContext extends MinkContext implements KernelAwareInterface
 
     /** @var  DateTime  */
     private  $now;
+    /** @var  Session */
     private $session;
     private $page;
     /** @var  PHPMailer */
     public $mail;
+
+
 
 
     public function setKernel(KernelInterface $kernel)
@@ -136,9 +140,7 @@ class FeatureContext extends MinkContext implements KernelAwareInterface
      * @When /^I start demo$/
      */
     public function iStartDemo()    {
-
-
-
+        $this->initSession();
     }
 
 
@@ -225,6 +227,14 @@ ALT;
         $this->sendMail(
           $this->kernel->getContainer()->getParameter("other_recipient")
         );
+    }
+
+    /**
+     * @Then /^close browser$/
+     */
+    public function closeBrowser()
+    {
+        $this->session->stop();
     }
 
     /**
@@ -617,7 +627,7 @@ INFO;
     {
         $this->getSession()->wait(intval($duration) * 1000,
             '(0 === jQuery.active && 0 === jQuery(\':animated\').length)');
-//        $this->getSession()->wait($duration, '(0 === Ajax.activeRequestCount)');
+//        $this->getSession()->wait($duration, '(0 === Ajax.activeRequestCount)'); //for Prototypejs
     }
 
     public function generateRandomEmail()
@@ -756,10 +766,6 @@ INFO;
         return [$brand1, $brand2];
     }
 
-    public function visitMoreXFilter($what)
-    {
-    }
-
     public function visitMoreColorFilter()
     {
         list($color1, $color2) = $this->getTwoColor();
@@ -792,12 +798,37 @@ INFO;
 
     public function callVisitMethods()
     {
-        $this->visitColorFilter();
+        /*$this->visitColorFilter();
         $this->visitMoreColorFilter();
         $this->visitPriceFilter();
         $this->visitBrandFilter();
-        $this->visitMoreBrandFilter();
+        $this->visitMoreBrandFilter();*/
+        $this->visitBrandandProbider();
     }
+
+    public function visitBrandandProbider(){
+        $this->session->visit($this->base_url . "arama/");
+        $providers = $this->page->find("css", "#filterProvider > div > div > div")->findAll("css", "div");
+
+        $brand_attr = $this->getRandBrand($this->getProvidersORBrands("brands")); // altta kullanılacak
+
+        for ($i = 0; $i < count($providers); $i++) {
+            $provider_span = $providers[$i]->find('css', 'span');
+
+            if (intval(str_replace("(", "", ($provider_span->getText())))) { // higher zero
+                $provider_input = $providers[$i]->find('css', 'input');
+                $fl_provider_url = $provider_input->getAttribute("data-url") . "-magazasi";
+                $fl_provider_name = $provider_input->getAttribute("data-name");
+                break;
+            }
+        }
+
+        $this->session->visit($this->base_url . $brand_attr['url'] . $fl_provider_url);
+        $this->subProduct = intval($this->getFilterProgressBar($this->page));
+
+
+    }
+
 
     /**
      * @Then /^I mix some filter$/
@@ -812,6 +843,7 @@ INFO;
 
             echo "Provider sayısı: <$this->totalProvider>\nBrand sayısı: <$this->totalBrand>\nToplam ürün: $this->totalProduct \n\n";
             $this->callVisitMethods();
+            $this->iSendReportMail();
 
         } catch (Exception $e) {
             $this->getException($e);
