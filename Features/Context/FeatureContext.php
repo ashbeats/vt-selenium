@@ -7,6 +7,7 @@
 namespace Acme\DemoBundle\Features\Context;
 
 use Behat\Mink\Element\DocumentElement;
+use Behat\Mink\Element\NodeElement;
 use Behat\Mink\Session;
 use Behat\Symfony2Extension\Context\KernelDictionary;
 use \DateTime;
@@ -17,6 +18,7 @@ use Behat\Symfony2Extension\Context\KernelAwareInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Exception;
+use Behat\Mink\Exception\ElementNotFoundException;
 
 
 class FeatureContext extends MinkContext implements KernelAwareInterface
@@ -878,9 +880,10 @@ INFO;
         }
 
     }
+
     public function checkFilterPrice()
     {
-        if(is_null($this->page->find('xpath','//div[@class="range-slider-input"]')))
+        if (is_null($this->page->find('xpath', '//div[@class="range-slider-input"]')))
             throw new Exception('PriceFilter has a problem.');
         $this->mail_message .= "<p>Filter price ok.</p>";
 
@@ -888,7 +891,7 @@ INFO;
 
     public function checkFilterColors()
     {
-        if(!count($this->getColors()))
+        if (!count($this->getColors()))
             throw new Exception('There is no color on site');
         $this->mail_message .= "<p>Filter colors ok.</p>";
     }
@@ -900,26 +903,164 @@ INFO;
 
     public function checkFilterBrands()
     {
-        if(!count($this->getBrands()))
+        if (!count($this->getBrands()))
             throw new Exception('There is no brand on site');
         $this->mail_message .= "<p>Filter brands is ok.</p>";
 
     }
+
     public function getBrands()
     {
-        return $this->page->findAll('xpath','//div[@id="filterBrands"]//div[@class="inner"]//div/input');
+        return $this->page->findAll('xpath', '//div[@id="filterBrands"]//div[@class="inner"]//div/input');
     }
 
     public function checkFilterProvider()
     {
-        if(is_null($this->getProviders()) || !count($this->getProviders()))
+        if (is_null($this->getProviders()) || !count($this->getProviders()))
             throw new Exception('There is no provider on site');
         $this->mail_message .= "<p>Filter provider is ok.</p>";
     }
 
     public function getProviders()
     {
-        return $this->page->findAll('xpath','//div[@id="filterProvider"]//div[@class="inner"]//div/input');
+        return $this->page->findAll('xpath', '//div[@id="filterProvider"]//div[@class="inner"]//div/input');
+    }
+
+    /**
+     * @Then /^setDiscountAlert$/
+     */
+    public function setDiscountAlert()
+    {
+        try {
+            $this->initSession();
+            $this->mailSubject = "Deactive Alert Feature";
+            $this->session->visit($this->base_url);
+            $this->loginSite();
+            $this->session->visit($this->base_url . 'kadin-giyim');
+            $this->createDiscountAlert();
+            $this->iSendReportMail();
+
+        } catch (Exception $e) {
+            $this->getException($e);
+        }
+    }
+
+    public function loginSite()
+    {
+        $this->page->findById('loginRegisterButton')->click();
+        $this->iWaitSecond(3);
+        $this->page->fillField('_username', 'testhesabi');
+        $this->page->fillField('_password', 'test1234');
+        $this->page->pressButton('_submit');
+        $this->iWaitSecond(3);
+        $this->assertPageContainsText('Hesabım');
+
+    }
+
+    public function createDiscountAlert()
+    {
+        $this->page->findById('createDiscountAlertFromSearch')->click();
+        $this->assertElementContains('#simplemodal-data > form > label', 'Bu alarma bir isim verin:');
+        $this->page->find('xpath', '//*[@id="simplemodal-data"]/form/input')->setValue($this->generateRandomString(8));
+        $this->page->find('xpath', '//*[@id="simplemodal-data"]/form/input[2]')->click();
+        $this->iWaitSecond(2);
+        $this->checkAlertSet();
+    }
+
+    public function checkAlertSet()
+    {
+        $text = $this->page->find('xpath', '//*[@id="simplemodal-data"]/form/div/div')->getText();;
+        if ($text == 'Bu alarmı daha önce kurmuştunuz!') {
+            $this->warning_message .= "<p>Kurulu olan bir alarm kurmaya çalışıldı ve
+             <br><span style='color: darkred;'>$text</span><br>uyarısı başarılı bir şekilde alındı.";
+            $this->mail_message .= "<p>Test başarılı ancak uyarılar var.</p>";
+        } else
+            $this->mail_message .= "<p>Test başarılı</p>";
+    }
+
+    /**
+     * @Then /^deactiveAlert$/
+     */
+    public function deactivealert()
+    {
+    }
+
+    /**
+     * @Then /^checkCarousel$/
+     */
+    public function checkcarousel()
+    {
+        try {
+            $this->initSession();
+            $this->mailSubject = "Carousel Test Feature";
+            $this->session->visit($this->base_url);
+            $carouselLinks = $this->getCarouselLinks();
+            $this->followCarouselLinks($carouselLinks);
+            $this->iSendReportMail();
+
+
+        } catch (Exception $e) {
+            $this->getException($e);
+        }
+
+    }
+
+    public function getCarouselLinks()
+    {
+        $carouselDiv = $this->page->findAll('xpath','//div[@id="topCover"]//div[@class="bxSliderItem"]/div/figure/a');
+        /** @var NodeElement $crs */
+        $crs = null;
+        $carouselLinks = [];
+        foreach($carouselDiv as $crs)
+            $carouselLinks[]= $crs->getAttribute('href');
+        return $carouselLinks;
+    }
+
+    public function followCarouselLinks($links)
+    {
+        foreach($links as $l)
+        {
+            $this->session->visit($l);
+            if(strpos($l,'com/blog/') === false)
+                $this->checkPageHasProduct($l);
+            else
+            {
+                $statusCode = $this->session->getStatusCode();
+                if($statusCode!=200)
+                {
+                    $this->mail_message .= "<p style='color: darkred'>Blog page has problem!</p>";
+                    $this->exception_message .= "<p><a href='$l'>$l</a> page has problem.<br>
+                    It returns $statusCode status code. </p>";
+                    echo $l."has problem\n";
+                }
+                else
+                {
+                    $this->mail_message .= "<p><a href='$l'>$l</a> blog page works properly </p>";
+                    echo $l."works properly\n";
+                }
+            }
+        }
+
+    }
+
+    public function checkPageHasProduct($link)
+    {
+        if(count($this->getProducts()))
+        {
+            $this->mail_message .= "<p><a href='$link'>$link</a> works properly.</p>";
+            echo $link."\tworks properly.\n";
+        }
+        else
+        {
+            $this->mail_message .= "<p style='color: darkred'>Carousel sayfasına gidildiğinde ürün gösterilmiyor.</p>";
+            $this->exception_message .= "<p><a href='$link'>$link</a> carousel linkinde ürün gösterilmiyor. </p>";
+            echo $link."\thas problem.\n";
+        }
+    }
+
+    public function getProducts()
+    {
+        return $this->page->findAll('xpath', '//div[@class="productItem"]');
     }
 
 
