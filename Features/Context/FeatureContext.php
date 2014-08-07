@@ -6,6 +6,7 @@
 
 namespace Acme\DemoBundle\Features\Context;
 
+use Behat\Mink\Element\DocumentElement;
 use Behat\Mink\Session;
 use Behat\Symfony2Extension\Context\KernelDictionary;
 use \DateTime;
@@ -20,7 +21,7 @@ use Exception;
 
 class FeatureContext extends MinkContext implements KernelAwareInterface
 {
-    /** @var  KernelInterface  */
+    /** @var  KernelInterface */
     public $kernel;
 
     /** @var  ContainerInterface */
@@ -37,15 +38,14 @@ class FeatureContext extends MinkContext implements KernelAwareInterface
     private $totalProvider;
     private $totalBrand;
 
-    /** @var  DateTime  */
-    private  $now;
+    /** @var  DateTime */
+    private $now;
     /** @var  Session */
     private $session;
+    /** @var  DocumentElement */
     private $page;
     /** @var  PHPMailer */
     public $mail;
-
-
 
 
     public function setKernel(KernelInterface $kernel)
@@ -53,15 +53,15 @@ class FeatureContext extends MinkContext implements KernelAwareInterface
         $this->kernel = $kernel;
     }
 
-/*    public function setContainer()
-    {
-        $this->container = $this->kernel->getContainer();
-    }
+    /*    public function setContainer()
+        {
+            $this->container = $this->kernel->getContainer();
+        }
 
-    public function getParameter($element)
-    {
-        return $this->container->getParameter($element);
-    }*/
+        public function getParameter($element)
+        {
+            return $this->container->getParameter($element);
+        }*/
 
 
     function __construct()
@@ -82,7 +82,7 @@ class FeatureContext extends MinkContext implements KernelAwareInterface
     {
         $this->mail = new PHPMailer;
 
-        if(!$this->decideSendMailorNot($addr))
+        if (!$this->decideSendMailorNot($addr))
             return;
         $this->mail->CharSet = 'utf-8';
         $this->setMailAuth();
@@ -97,22 +97,22 @@ class FeatureContext extends MinkContext implements KernelAwareInterface
 
     }
 
-    public function decideAttachment($addr){
-        if(strpos($this->mailSubject,'ScanSite') !== false){
-            if($addr == $this->kernel->getContainer()->getParameter('main_recipient')){
-                $this->mail->addAttachment(dirname(__FILE__)."/../resource/report.csv",
-                    "report_{$this->now->format('Y-m-d_H:i:s')}.csv");
+    public function decideAttachment($addr)
+    {
+        if (strpos($this->mailSubject, 'ScanSite') !== false) {
+            if ($addr == $this->kernel->getContainer()->getParameter('main_recipient')) {
+                $this->mail->addAttachment(dirname(__FILE__) . "/../resource/report.csv",
+                    "report_{$this->now->format('Y-m-d_H.i.s')}.csv");
             }
         }
     }
 
     public function decideSendMailorNot($addr)
     {
-        if($addr == $this->kernel->getContainer()->getParameter('main_recipient'))
+        if ($addr == $this->kernel->getContainer()->getParameter('main_recipient'))
             return true;
-        else
-        {
-            if($this->exception_message=='No exception' && $this->warning_message=='No warning')
+        else {
+            if ($this->exception_message == 'No exception' && $this->warning_message == 'No warning')
                 return false;
             else
                 return true;
@@ -139,22 +139,14 @@ class FeatureContext extends MinkContext implements KernelAwareInterface
     /**
      * @When /^I start demo$/
      */
-    public function iStartDemo()    {
-        $this->initSession();
-        try{
-            $this->session->visit("http://mustafahasturk.com");
-            $this->session->stop();
-            echo "merhaba";
-
-
-
-        }catch (Exception $e)
-        {
-            $this->getException($e);
-        }
+    public function iStartDemo()
+    {
+        $sonuc = 0;
+        for ($i = 4; $i < 2000; $i++)
+            if (!($i % 3) || !($i % 5))
+                $sonuc += $i;
 
     }
-
 
 
     public function setMailText($addr)
@@ -234,10 +226,10 @@ ALT;
     {
         $this->mailSubject .= "_" . $this->now->getTimestamp();
         $this->sendMail(
-          $this->kernel->getContainer()->getParameter("main_recipient")
+            $this->kernel->getContainer()->getParameter("main_recipient")
         );
         $this->sendMail(
-          $this->kernel->getContainer()->getParameter("other_recipient")
+            $this->kernel->getContainer()->getParameter("other_recipient")
         );
     }
 
@@ -310,7 +302,7 @@ ALT;
         $this->exception_message .= "<span class='exception'> {$exception->getMessage()} </span>";
         $this->exception_message .= "<br><p class='line'> Exception occurred on: {$exception->getLine()}</p>";
         $this->iSendReportMail();
-        if($this->session)
+        if ($this->session)
             $this->session->stop();
         throw new Exception($this->exception_message);
     }
@@ -392,7 +384,7 @@ ALT;
             $this->setGeneralInfo();
             $this->scanProviders($this->getProvidersORBrands('providers'));
             $this->iSendReportMail();
-            unlink(dirname(__FILE__)."/../resource/report.csv");
+            unlink(dirname(__FILE__) . "/../resource/report.csv");
         } catch (Exception $e) {
             $this->getException($e);
         }
@@ -412,34 +404,35 @@ ALT;
         $this->mail_message .= "<span style='color: #000066; font-style: oblique'>Report.csv is at attachment. </span></div>";
     }
 
-    public function setCSVFields($provider){
+    public function setCSVFields($provider)
+    {
         $fieldContainer = [];
-        $field = [$provider,$this->subProduct];
+        $field = [$provider, $this->subProduct];
         $fieldContainer[] = $field;
         return $fieldContainer;
     }
 
-    public function setCSVFile($fields){
-        $f = fopen(dirname(__FILE__)."/../resource/report.csv",'ab+');
-        foreach($fields as $line)
-            fputcsv($f,$line);
+    public function setCSVFile($fields)
+    {
+        $f = fopen(dirname(__FILE__) . "/../resource/report.csv", 'ab+');
+        foreach ($fields as $line)
+            fputcsv($f, $line);
         fclose($f);
     }
 
 
     private function checkSubProduct($providerDataName)
     {
-/*        if ($this->subProduct > 0) {
-            $sp = "<span class='ok'> '$this->subProduct' ürün var. </span>";
-            $tm = "<div class='provider'>'$providerDataName' de/da $sp</div>\n";
-            $this->mail_message .= $tm;
-        } else {
-            $sp = "<span class='fail' style='color:red;'> ürün yok. </span>";
-            $tm = "<div class='provider'>'$providerDataName' de/da $sp</div>\n";
-            $this->warning_message .= $tm;
-        }*/
-        if($this->subProduct <=0)
-        {
+        /*        if ($this->subProduct > 0) {
+                    $sp = "<span class='ok'> '$this->subProduct' ürün var. </span>";
+                    $tm = "<div class='provider'>'$providerDataName' de/da $sp</div>\n";
+                    $this->mail_message .= $tm;
+                } else {
+                    $sp = "<span class='fail' style='color:red;'> ürün yok. </span>";
+                    $tm = "<div class='provider'>'$providerDataName' de/da $sp</div>\n";
+                    $this->warning_message .= $tm;
+                }*/
+        if ($this->subProduct <= 0) {
             $sp = "<span class='fail' style='color:red;'> ürün yok. </span>";
             $tm = "<div class='provider'>'$providerDataName' de/da $sp</div>\n";
             $this->warning_message .= $tm;
@@ -821,7 +814,8 @@ INFO;
 //        $this->visitBrandandProbider();
     }
 
-    public function visitBrandandProbider(){
+    public function visitBrandandProbider()
+    {
         $this->session->visit($this->base_url . "arama/");
         $providers = $this->page->find("css", "#filterProvider > div > div > div")->findAll("css", "div");
 
@@ -863,6 +857,69 @@ INFO;
         } catch (Exception $e) {
             $this->getException($e);
         }
+    }
+
+    /**
+     * @Then /^checkFilter$/
+     */
+    public function checkfilter()
+    {
+        try {
+            $this->initSession();
+            $this->session->visit($this->base_url . 'arama');
+            $this->mailSubject = "Filter Check Test";
+            $this->checkFilterBrands();
+            $this->checkFilterProvider();
+            $this->checkFilterColors();
+            $this->checkFilterPrice();
+            $this->iSendReportMail();
+        } catch (Exception $e) {
+            $this->getException($e);
+        }
+
+    }
+    public function checkFilterPrice()
+    {
+        if(is_null($this->page->find('xpath','//div[@class="range-slider-input"]')))
+            throw new Exception('PriceFilter has a problem.');
+        $this->mail_message .= "<p>Filter price ok.</p>";
+
+    }
+
+    public function checkFilterColors()
+    {
+        if(!count($this->getColors()))
+            throw new Exception('There is no color on site');
+        $this->mail_message .= "<p>Filter colors ok.</p>";
+    }
+
+    public function getColors()
+    {
+        return $this->page->findAll('xpath', '//div[@id="filterColors"]//div[@class="inner"]/ul/li');
+    }
+
+    public function checkFilterBrands()
+    {
+        if(!count($this->getBrands()))
+            throw new Exception('There is no brand on site');
+        $this->mail_message .= "<p>Filter brands is ok.</p>";
+
+    }
+    public function getBrands()
+    {
+        return $this->page->findAll('xpath','//div[@id="filterBrands"]//div[@class="inner"]//div/input');
+    }
+
+    public function checkFilterProvider()
+    {
+        if(is_null($this->getProviders()) || !count($this->getProviders()))
+            throw new Exception('There is no provider on site');
+        $this->mail_message .= "<p>Filter provider is ok.</p>";
+    }
+
+    public function getProviders()
+    {
+        return $this->page->findAll('xpath','//div[@id="filterProvider"]//div[@class="inner"]//div/input');
     }
 
 
