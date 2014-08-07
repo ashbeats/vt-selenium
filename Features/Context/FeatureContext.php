@@ -143,10 +143,6 @@ class FeatureContext extends MinkContext implements KernelAwareInterface
      */
     public function iStartDemo()
     {
-        $sonuc = 0;
-        for ($i = 4; $i < 2000; $i++)
-            if (!($i % 3) || !($i % 5))
-                $sonuc += $i;
 
     }
 
@@ -969,6 +965,7 @@ INFO;
 
     public function checkAlertSet()
     {
+        $this->page->findById('createDiscountAlertFromSearch')->click();
         $text = $this->page->find('xpath', '//*[@id="simplemodal-data"]/form/div/div')->getText();;
         if ($text == 'Bu alarmı daha önce kurmuştunuz!') {
             $this->warning_message .= "<p>Kurulu olan bir alarm kurmaya çalışıldı ve
@@ -978,12 +975,6 @@ INFO;
             $this->mail_message .= "<p>Test başarılı</p>";
     }
 
-    /**
-     * @Then /^deactiveAlert$/
-     */
-    public function deactivealert()
-    {
-    }
 
     /**
      * @Then /^checkCarousel$/
@@ -997,7 +988,6 @@ INFO;
             $carouselLinks = $this->getCarouselLinks();
             $this->followCarouselLinks($carouselLinks);
             $this->iSendReportMail();
-
 
         } catch (Exception $e) {
             $this->getException($e);
@@ -1061,6 +1051,58 @@ INFO;
     public function getProducts()
     {
         return $this->page->findAll('xpath', '//div[@class="productItem"]');
+    }
+
+    /**
+     * @Then /^removeAlert/
+     */
+    public function removeAlert()
+    {
+        try{
+            $this->mailSubject = "Remove Alert Feature";
+            $this->initSession();
+            $this->visit($this->base_url);
+            $this->loginSite();
+            $this->visit($this->base_url."kullanici/alarm");
+            $this->removeAlertItem();
+            $this->iSendReportMail();
+        }
+        catch(Exception $e)
+        {
+            $this->getException($e);
+        }
+
+    }
+
+    public function removeAlertItem()
+    {
+        do{
+            /** @var NodeElement $i */
+            $items = $this->getAlertItem();
+            if(!count($items))
+            {
+                $this->mail_message .= "<p>Hesapta daha fazla kurulu alarm yok.</p>";
+                echo "Silinecek alarm kalmadı\n";
+                break;
+            }
+            else
+            {
+                $i= $items[array_rand($items)];
+                $i->find('xpath','//a[@class="deleteAlarmButton"]')->click();
+                $this->iWaitSecond(1);
+                $removedAlert = $i->find('xpath','//div/span')->getText();
+                $this->page->find('xpath', '//*[@id="simplemodal-data"]/form/input[1]')->click();
+                $this->iWaitSecond(1);
+                $this->mail_message .= "<p>$removedAlert\t alert silindi.</p>";
+                echo $removedAlert."\talert silindi.\n";
+            }
+        }while(true);
+
+    }
+
+    public function getAlertItem()
+    {
+        return $this->page->findAll('xpath','//div[@class="alarmItem"]');
     }
 
 

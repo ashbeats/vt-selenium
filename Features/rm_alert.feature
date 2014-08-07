@@ -3,5 +3,6 @@ Feature: remove alert feature
   As a member
   I need to be able to deactive alert on profile
 
+  @javascript
   Scenario: go profile and deactive alert
-    Then deactiveAlert
+    Then removeAlert
