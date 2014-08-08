@@ -78,6 +78,7 @@ class FeatureContext extends MinkContext implements KernelAwareInterface
     {
         $this->session = $this->getSession();
         $this->page = $this->session->getPage();
+//        $this->getSession()->getDriver()->resizeWindow(1,1);
     }
 
     public function sendMail($addr)
@@ -86,6 +87,7 @@ class FeatureContext extends MinkContext implements KernelAwareInterface
 
         if (!$this->decideSendMailorNot($addr))
             return;
+
         $this->mail->CharSet = 'utf-8';
         $this->setMailAuth();
         $this->setMailContact();
@@ -111,14 +113,15 @@ class FeatureContext extends MinkContext implements KernelAwareInterface
 
     public function decideSendMailorNot($addr)
     {
+        if (strpos($this->exception_message, 'timeout') !== false)
+            return false;
         if ($addr == $this->kernel->getContainer()->getParameter('main_recipient'))
             return true;
         else {
             if ($this->exception_message == 'No exception' && $this->warning_message == 'No warning')
                 return false;
-            else
-                return true;
         }
+
     }
 
     public function setMailAuth()
@@ -143,9 +146,7 @@ class FeatureContext extends MinkContext implements KernelAwareInterface
      */
     public function iStartDemo()
     {
-
     }
-
 
     public function setMailText($addr)
     {
@@ -298,7 +299,7 @@ ALT;
     public function getException($exception)
     {
         $this->exception_message .= "<span class='exception'> {$exception->getMessage()} </span>";
-        $this->exception_message .= "<br><p class='line'> Exception occurred on: {$exception->getLine()}</p>";
+        $this->exception_message .= "<br><p class='line'> Exception occurred on: {$exception->getLine()} line number</p>";
         $this->iSendReportMail();
         if ($this->session)
             $this->session->stop();
@@ -432,8 +433,7 @@ ALT;
                 }*/
         if ($this->subProduct <= 0) {
             $sp = "<span class='fail' style='color:red;'> ürün yok. </span>";
-            $tm = "<div class='provider'>'$providerDataName' de/da $sp</div>\n";
-            $this->warning_message .= $tm;
+            $this->warning_message .= "<div class='provider'>'$providerDataName' de/da $sp</div>\n";;
         }
     }
 
@@ -966,6 +966,7 @@ INFO;
     public function checkAlertSet()
     {
         $this->page->findById('createDiscountAlertFromSearch')->click();
+        $this->iWaitSecond(10);
         $text = $this->page->find('xpath', '//*[@id="simplemodal-data"]/form/div/div')->getText();;
         if ($text == 'Bu alarmı daha önce kurmuştunuz!') {
             $this->warning_message .= "<p>Kurulu olan bir alarm kurmaya çalışıldı ve
@@ -997,36 +998,31 @@ INFO;
 
     public function getCarouselLinks()
     {
-        $carouselDiv = $this->page->findAll('xpath','//div[@id="topCover"]//div[@class="bxSliderItem"]/div/figure/a');
+        $carouselDiv = $this->page->findAll('xpath', '//div[@id="topCover"]//div[@class="bxSliderItem"]/div/figure/a');
         /** @var NodeElement $crs */
         $crs = null;
         $carouselLinks = [];
-        foreach($carouselDiv as $crs)
-            $carouselLinks[]= $crs->getAttribute('href');
+        foreach ($carouselDiv as $crs)
+            $carouselLinks[] = $crs->getAttribute('href');
         return $carouselLinks;
     }
 
     public function followCarouselLinks($links)
     {
-        foreach($links as $l)
-        {
+        foreach ($links as $l) {
             $this->session->visit($l);
-            if(strpos($l,'com/blog/') === false)
+            if (strpos($l, 'com/blog/') === false)
                 $this->checkPageHasProduct($l);
-            else
-            {
+            else {
                 $statusCode = $this->session->getStatusCode();
-                if($statusCode!=200)
-                {
+                if ($statusCode != 200) {
                     $this->mail_message .= "<p style='color: darkred'>Blog page has problem!</p>";
                     $this->exception_message .= "<p><a href='$l'>$l</a> page has problem.<br>
                     It returns $statusCode status code. </p>";
-                    echo $l."has problem\n";
-                }
-                else
-                {
+                    echo $l . "has problem\n";
+                } else {
                     $this->mail_message .= "<p><a href='$l'>$l</a> blog page works properly </p>";
-                    echo $l."works properly\n";
+                    echo $l . "works properly\n";
                 }
             }
         }
@@ -1035,16 +1031,13 @@ INFO;
 
     public function checkPageHasProduct($link)
     {
-        if(count($this->getProducts()))
-        {
+        if (count($this->getProducts())) {
             $this->mail_message .= "<p><a href='$link'>$link</a> works properly.</p>";
-            echo $link."\tworks properly.\n";
-        }
-        else
-        {
+            echo $link . "\tworks properly.\n";
+        } else {
             $this->mail_message .= "<p style='color: darkred'>Carousel sayfasına gidildiğinde ürün gösterilmiyor.</p>";
             $this->exception_message .= "<p><a href='$link'>$link</a> carousel linkinde ürün gösterilmiyor. </p>";
-            echo $link."\thas problem.\n";
+            echo $link . "\thas problem.\n";
         }
     }
 
@@ -1058,17 +1051,15 @@ INFO;
      */
     public function removeAlert()
     {
-        try{
+        try {
             $this->mailSubject = "Remove Alert Feature";
             $this->initSession();
             $this->visit($this->base_url);
             $this->loginSite();
-            $this->visit($this->base_url."kullanici/alarm");
+            $this->visit($this->base_url . "kullanici/alarm");
             $this->removeAlertItem();
             $this->iSendReportMail();
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             $this->getException($e);
         }
 
@@ -1076,33 +1067,30 @@ INFO;
 
     public function removeAlertItem()
     {
-        do{
+        do {
             /** @var NodeElement $i */
             $items = $this->getAlertItem();
-            if(!count($items))
-            {
+            if (!count($items)) {
                 $this->mail_message .= "<p>Hesapta daha fazla kurulu alarm yok.</p>";
                 echo "Silinecek alarm kalmadı\n";
                 break;
-            }
-            else
-            {
-                $i= $items[array_rand($items)];
-                $i->find('xpath','//a[@class="deleteAlarmButton"]')->click();
+            } else {
+                $i = $items[array_rand($items)];
+                $i->find('xpath', '//a[@class="deleteAlarmButton"]')->click();
                 $this->iWaitSecond(1);
-                $removedAlert = $i->find('xpath','//div/span')->getText();
+                $removedAlert = $i->find('xpath', '//div/span')->getText();
                 $this->page->find('xpath', '//*[@id="simplemodal-data"]/form/input[1]')->click();
                 $this->iWaitSecond(1);
                 $this->mail_message .= "<p>$removedAlert\t alert silindi.</p>";
-                echo $removedAlert."\talert silindi.\n";
+                echo $removedAlert . "\talert silindi.\n";
             }
-        }while(true);
+        } while (true);
 
     }
 
     public function getAlertItem()
     {
-        return $this->page->findAll('xpath','//div[@class="alarmItem"]');
+        return $this->page->findAll('xpath', '//div[@class="alarmItem"]');
     }
 
 
