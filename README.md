@@ -1,5 +1,12 @@
-BDD Mink features to testing behaviors of **vitringez.com**
-------------------------------------------------------------
+#### Important Notice: I have stopped working with the project definitely because of career worries. Feel free to fork the project.
+
+
+
+### VT-Selenium
+
+Mink features to testing behaviors of **vitringez.com**
+
+
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/muhasturk/Mink/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/muhasturk/Mink/?branch=master)
 
 install composer
